@@ -23,3 +23,6 @@ command = "npm run build:worker"
 # [[kv_namespaces]]
 # binding = "MY_KV"
 # id = "your-kv-namespace-id"
+
+[observability.logs]
+enabled = true
