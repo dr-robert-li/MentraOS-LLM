@@ -567,8 +567,13 @@ class TranscriptionManager {
     // Remove wake word from query
     const query = this.removeWakeWord(rawCombinedText);
 
+    // Debug logging to understand what's happening
+    this.logger.debug(`[processQuery] Raw text: "${rawCombinedText}"`);
+    this.logger.debug(`[processQuery] Query after wake word removal: "${query}"`);
+
     if (query.trim().length === 0) {
       isRunning = false;
+      this.logger.warn(`[processQuery] Empty query after processing. Raw text was: "${rawCombinedText}"`);
       this.session.layouts.showTextWall(
         wrapText("No query provided.", 30),
         { durationMs: 5000 }
@@ -733,6 +738,9 @@ class TranscriptionManager {
    * Remove the wake word from the input text
    */
   private removeWakeWord(text: string): string {
+    // Debug: log original text
+    const originalText = text;
+    
     // Escape each wake word for regex special characters
     const escapedWakeWords = explicitWakeWords.map(word =>
       word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -742,8 +750,22 @@ class TranscriptionManager {
       word.split(' ').join('[\\s,\\.]*')
     );
     // Create a regex that removes everything from the start until (and including) a wake word
-    const wakeRegex = new RegExp(`.*?(?:${wakePatterns.join('|')})[\\s,\\.!]*`, 'i');
-    return text.replace(wakeRegex, '').trim();
+    const wakeRegex = new RegExp(`^.*?(?:${wakePatterns.join('|')})[\\s,\\.!]*`, 'i');
+    const result = text.replace(wakeRegex, '').trim();
+    
+    // Safety check: if the result is empty but original text wasn't empty, return original
+    if (result.length === 0 && originalText.trim().length > 0) {
+      logger.warn(`[removeWakeWord] Wake word removal resulted in empty string, returning original`);
+      return originalText.trim();
+    }
+    
+    // Debug logging
+    if (originalText !== result) {
+      logger.debug(`[removeWakeWord] Original: "${originalText}" -> Result: "${result}"`);
+      logger.debug(`[removeWakeWord] Regex pattern: ${wakeRegex.source}`);
+    }
+    
+    return result;
   }
 
   /**
