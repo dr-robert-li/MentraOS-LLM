@@ -44,9 +44,63 @@ export default {
           endpoints: {
             health: 'GET /health',
             info: 'GET /api/info',
+            webhook: 'POST /webhook',
             test: 'POST /api/test'
           }
         }), {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      }
+
+      // MentraOS webhook endpoint for receiving events
+      if (url.pathname === '/webhook' && request.method === 'POST') {
+        const body = await request.json() as any;
+        
+        // Log the webhook event for debugging
+        console.log('MentraOS webhook received:', JSON.stringify(body, null, 2));
+        
+        // Process different types of MentraOS events
+        const eventType = body.type || body.event_type || 'unknown';
+        
+        let processedResponse: any = {
+          status: 'received',
+          event_type: eventType,
+          timestamp: new Date().toISOString(),
+          processed: true
+        };
+
+        // Handle specific MentraOS event types
+        switch (eventType) {
+          case 'notification':
+            processedResponse.message = 'Notification event processed';
+            processedResponse.notifications_count = Array.isArray(body.notifications) ? body.notifications.length : 1;
+            break;
+            
+          case 'location':
+            processedResponse.message = 'Location event processed';
+            processedResponse.location_data = body.location ? 'received' : 'missing';
+            break;
+            
+          case 'user_context':
+            processedResponse.message = 'User context event processed';
+            processedResponse.context_keys = body.context ? Object.keys(body.context) : [];
+            break;
+            
+          case 'health_check':
+            processedResponse.message = 'Health check from MentraOS';
+            processedResponse.api_status = 'healthy';
+            processedResponse.features = ['perplexity', 'gpt-5', 'notifications', 'location'];
+            break;
+            
+          default:
+            processedResponse.message = `Unknown event type: ${eventType}`;
+            processedResponse.raw_data_keys = Object.keys(body);
+        }
+        
+        return new Response(JSON.stringify(processedResponse), {
           headers: { 
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
@@ -81,8 +135,8 @@ export default {
       // Default 404 response
       return new Response(JSON.stringify({
         error: 'Not Found',
-        available_endpoints: ['/health', '/api/info', '/api/test']
-      }), { 
+        available_endpoints: ['/health', '/api/info', '/webhook', '/api/test']
+      }), {
         status: 404,
         headers: { 
           'Content-Type': 'application/json',

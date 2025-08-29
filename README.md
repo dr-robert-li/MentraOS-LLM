@@ -142,9 +142,32 @@ npm run prod
 GET /health
 ```
 
-### LLM Testing
+### API Information
 ```http
-POST /llm/test
+GET /api/info
+```
+
+### MentraOS Webhook (NEW!)
+```http
+POST /webhook
+Content-Type: application/json
+
+{
+  "type": "notification",
+  "notifications": [...],
+  "timestamp": "2025-08-29T09:00:00Z"
+}
+```
+
+**Supported Event Types:**
+- `notification` - Smart glasses notification events
+- `location` - User location updates  
+- `user_context` - Context changes (notifications, location, etc.)
+- `health_check` - MentraOS health checks
+
+### API Testing
+```http
+POST /api/test
 Content-Type: application/json
 
 {
