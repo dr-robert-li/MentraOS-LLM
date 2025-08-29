@@ -37,9 +37,9 @@ RUN apk add --no-cache curl
 COPY --from=build /app/package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy built application and assets
+# Copy built application and assets  
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/src/public ./src/public
+COPY --from=build /app/src/public ./dist/public
 
 # Expose port (Google Cloud Run uses PORT environment variable)
 EXPOSE 80
