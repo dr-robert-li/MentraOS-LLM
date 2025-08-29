@@ -3,9 +3,12 @@ import {
   AppSession,
   AppServer, PhotoData,
   GIVE_APP_CONTROL_OF_TOOL_RESPONSE,
+  ToolCall,
   logger
 } from '@mentra/sdk';
 import { MiraAgent } from './agents';
+import { NewsAgent } from './agents/NewsAgent';
+import { NotificationFilterAgent } from './agents/NotificationFilterAgent';
 import { wrapText, TranscriptProcessor } from './utils';
 import { LLMProvider } from './utils/LLMProvider';
 import { getAllToolsForUser } from './agents/tools/TpaTool';
@@ -919,6 +922,171 @@ class MiraServer extends AppServer {
       notificationsManager.addNotifications(userId, [phoneNotifications]);
     }
     // No need to update agent context here; notifications will be passed in userContext when needed
+  }
+
+  // Handle tool calls from Mira AI
+  protected async onToolCall(toolCall: ToolCall): Promise<string | undefined> {
+    const { toolId, userId, toolParameters } = toolCall;
+    
+    logger.info(`Tool called: ${toolId} by user: ${userId}`);
+    logger.info(`Parameters: ${JSON.stringify(toolParameters)}`);
+
+    try {
+      // Get the agent for this user (from any session)
+      let agent: MiraAgent | undefined;
+      
+      // Try to find an agent from active sessions for this user
+      for (const [sessionId, sessionAgent] of this.agentPerSession.entries()) {
+        if (sessionId.includes(userId)) {
+          agent = sessionAgent;
+          break;
+        }
+      }
+
+      // If no active session, create a temporary agent for the tool call
+      if (!agent) {
+        const cleanServerUrl = process.env.SERVER_URL || '';
+        agent = new MiraAgent(cleanServerUrl, userId);
+      }
+
+      switch (toolId) {
+        case 'web_search':
+          return await this.handleWebSearch(toolParameters, agent);
+        
+        case 'list_available_apps':
+          return await this.handleListApps(toolParameters, agent, userId);
+          
+        case 'control_app':
+          return await this.handleControlApp(toolParameters, agent, userId);
+          
+        case 'calculate':
+          return await this.handleCalculate(toolParameters, agent);
+          
+        case 'get_news_summary':
+          return await this.handleNewsAPI(toolParameters, userId);
+          
+        case 'analyze_notifications':
+          return await this.handleNotificationAnalysis(toolParameters, userId);
+          
+        default:
+          logger.warn(`Unknown tool: ${toolId}`);
+          return `Unknown tool: ${toolId}`;
+      }
+    } catch (error) {
+      logger.error(error, `Error handling tool call ${toolId}:`);
+      return `Error executing tool: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
+  }
+
+  private async handleWebSearch(parameters: any, agent: MiraAgent): Promise<string> {
+    const searchTool = agent.agentTools.find(tool => tool.name === 'Search_Engine');
+    if (!searchTool) {
+      return 'Search functionality not available';
+    }
+    
+    const result = await searchTool.invoke({
+      searchKeyword: parameters.query,
+      location: parameters.location || undefined
+    });
+    
+    return typeof result === 'string' ? result : JSON.stringify(result);
+  }
+
+  private async handleListApps(parameters: any, agent: MiraAgent, userId: string): Promise<string> {
+    const listAppsTool = agent.agentTools.find(tool => tool.name === 'TPA_ListApps');
+    if (!listAppsTool) {
+      return 'App listing functionality not available';
+    }
+    
+    const result = await listAppsTool.invoke({
+      includeRunning: parameters.include_running || false
+    });
+    
+    return typeof result === 'string' ? result : JSON.stringify(result);
+  }
+
+  private async handleControlApp(parameters: any, agent: MiraAgent, userId: string): Promise<string> {
+    const controlAppTool = agent.agentTools.find(tool => tool.name === 'TPA_Commands');
+    if (!controlAppTool) {
+      return 'App control functionality not available';
+    }
+    
+    const result = await controlAppTool.invoke({
+      action: parameters.action,
+      packageName: parameters.packageName
+    });
+    
+    return typeof result === 'string' ? result : JSON.stringify(result);
+  }
+
+  private async handleCalculate(parameters: any, agent: MiraAgent): Promise<string> {
+    const calculatorTool = agent.agentTools.find(tool => tool.name === 'calculator');
+    if (!calculatorTool) {
+      return 'Calculator functionality not available';
+    }
+    
+    const result = await calculatorTool.invoke({
+      input: parameters.expression
+    });
+    
+    return typeof result === 'string' ? result : JSON.stringify(result);
+  }
+
+  private async handleNewsAPI(parameters: any, userId: string): Promise<string> {
+    try {
+      const newsAgent = new NewsAgent();
+      const result = await newsAgent.handleContext({});
+      
+      if (result && result.news_summaries && Array.isArray(result.news_summaries)) {
+        if (result.news_summaries.length === 0) {
+          return 'No news articles available at this time';
+        }
+        
+        // Format the summaries as a readable list
+        const formattedSummaries = result.news_summaries
+          .slice(0, 5) // Limit to 5 news items for smart glasses display
+          .map((summary: string, index: number) => `${index + 1}. ${summary}`)
+          .join('\n');
+          
+        return `Latest Tech News:\n${formattedSummaries}`;
+      }
+      
+      return 'Unable to fetch news summaries';
+    } catch (error) {
+      logger.error(error, `Error in handleNewsAPI:`);
+      return `Error fetching news: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
+  }
+
+  private async handleNotificationAnalysis(parameters: any, userId: string): Promise<string> {
+    try {
+      // Get the latest notifications for this user
+      const notifications = notificationsManager.getLatestNotifications(userId, 10);
+      
+      if (!notifications || notifications.length === 0) {
+        return 'No notifications available to analyze';
+      }
+      
+      const filterAgent = new NotificationFilterAgent();
+      const result = await filterAgent.handleContext({ notifications });
+      
+      if (Array.isArray(result) && result.length > 0) {
+        const maxNotifications = parameters.max_notifications || 5;
+        const topNotifications = result
+          .slice(0, maxNotifications)
+          .map((notif: any, index: number) => 
+            `${index + 1}. ${notif.summary} (${notif.appName})`
+          )
+          .join('\n');
+          
+        return `Important Notifications:\n${topNotifications}`;
+      }
+      
+      return 'No important notifications found';
+    } catch (error) {
+      logger.error(error, `Error in handleNotificationAnalysis:`);
+      return `Error analyzing notifications: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
   }
 
   // Handle session disconnection
