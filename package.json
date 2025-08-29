@@ -39,12 +39,13 @@
     "ghcr:release": "npm run ghcr:build && npm run ghcr:push"
   },
   "dependencies": {
+    "@augmentos/sdk": "^1.1.19",
     "@langchain/anthropic": "^0.3.16",
     "@langchain/community": "^0.3.39",
     "@langchain/core": "^0.3.55",
     "@langchain/google-vertexai": "^0.2.3",
     "@langchain/openai": "^0.5.4",
-    "@mentra/sdk": "^2.1.18",
+    "@mentra/sdk": "^2.1.22",
     "@node-rs/jieba": "^2.0.1",
     "@types/express": "^5.0.1",
     "@types/node": "^22.13.14",
@@ -58,8 +59,8 @@
     "ws": "^8.18.1"
   },
   "devDependencies": {
-    "typescript": "^5.9.2",
     "@cloudflare/workers-types": "^4.20240620.0",
+    "typescript": "^5.9.2",
     "wrangler": "^4.33.1"
   }
 }
