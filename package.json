@@ -10,7 +10,7 @@
     "docker:build": "docker compose -f docker/docker-compose.dev.yml -p dev build",
     "ngrok": "ngrok http --url=mira.ngrok.dev 8040",
     "build": "bun build ./src/index.ts --outdir ./dist --target bun",
-    "build:worker": "tsc --project tsconfig.worker.json && bun build ./dist/worker.js --outdir ./dist --target browser --format esm --outfile dist/worker.js",
+    "build:worker": "tsc --project tsconfig.worker.json && bun build ./dist/worker.js --outdir ./dist --target node --format esm --outfile dist/worker.js",
     "deploy": "wrangler deploy",
     "deploy:dev": "wrangler deploy --env development",
     "deploy:prod": "wrangler deploy --env production",
