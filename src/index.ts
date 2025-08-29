@@ -28,26 +28,48 @@ if (!PACKAGE_NAME) {
 
 logger.info(`🚀🚀🚀 Starting ${PACKAGE_NAME} server on port ${PORT}... 🚀🚀🚀`);
 
-// Wake words that trigger Mira
+// Wake words that trigger Mentra
 const explicitWakeWords = [
-  "hey mira", "he mira", "hey mara", "he mara", "hey mirror", "he mirror",
-  "hey miara", "he miara", "hey mia", "he mia", "hey mural", "he mural",
-  "hey amira", "hey myra", "he myra", "hay mira", "hai mira", "hey-mira",
-  "he-mira", "heymira", "heymara", "hey mirah", "he mirah", "hey meera", "he meera",
-  "Amira", "amira", "a mira", "a mirror", "hey miller", "he miller", "hey milla", "he milla", "hey mila", "he mila",
-  "hey miwa", "he miwa", "hey mora", "he mora", "hey moira", "he moira",
-  "hey miera", "he miera", "hey mura", "he mura", "hey maira", "he maira",
-  "hey meara", "he meara", "hey mara", "he mara", "hey mina", "he mina",
-  "hey mirra", "he mirra", "hey mir", "he mir", "hey miro", "he miro",
-  "hey miruh", "he miruh", "hey meerah", "he meerah", "hey meira", "he meira",
-  "hei mira", "hi mira", "hey mere", "he mere", "hey murra", "he murra",
-  "hey mera", "he mera", "hey neera", "he neera", "hey murah", "he murah",
-  "hey mear", "he mear", "hey miras", "he miras", "hey miora", "he miora", "hey miri", "he miri",
-  "hey maura", "he maura", "hey maya", "he maya", "hey moora", "he moora",
-  "hey mihrah", "he mihrah", "ay mira", "ey mira", "yay mira", "hey mihra",
-  "hey mera", "hey mira", "hey mila", "hey mirra"
+  "hey mentra", "he mentra", "hay mentra", "hai mentra", "hi mentra", "hei mentra",
+  "hey mantra", "he mantra", "hey mentor", "he mentor", "hey menta", "he menta", 
+  "hey mental", "he mental", "hey center", "he center", "hey centro", "he centro",
+  "hey menter", "he menter", "hey mentora", "he mentora", "hey mentro", "he mentro",
+  "hey metra", "he metra", "hey metro", "he metro", "hey mentara", "he mentara",
+  "hey mentrah", "he mentrah", "hey mentral", "he mentral", "hey mintra", "he mintra",
+  "hey muntra", "he muntra", "hey montra", "he montra", "hey maintra", "he maintra",
+  "hey motra", "he motra", "hey mencher", "he mencher", "hey mentcha", "he mentcha",
+  "hey mentia", "he mentia", "hey mensra", "he mensra", "hey menstra", "he menstra",
+  "hey menthra", "he menthra", "hey methera", "he methera", "hey menchera", "he menchera",
+  "hey mentira", "he mentira", "hey mentara", "he mentara", "hey mentore", "he mentore",
+  "hey mentru", "he mentru", "hey mentri", "he mentri", "hey mentry", "he mentry",
+  "hey mendtra", "he mendtra", "hey mentraw", "he mentraw", "hey mentree", "he mentree",
+  "hey mentray", "he mentray", "hey mentera", "he mentera", "hey mentrala", "he mentrala",
+  "hey mentora", "he mentora", "hey mentula", "he mentula", "hey mentrali", "he mentrali",
+  "hey-mentra", "he-mentra", "heymentra", "hementra", "ay mentra", "ey mentra",
+  "yay mentra", "hey mentrah", "hey mentar", "he mentar", "hey mentir", "he mentir",
+  "mentra", "menta"
 ];
 
+// Origina "mira" wake word
+// const explicitWakeWords = [
+//  "hey mira", "he mira", "hey mara", "he mara", "hey mirror", "he mirror",
+//  "hey miara", "he miara", "hey mia", "he mia", "hey mural", "he mural",
+//  "hey amira", "hey myra", "he myra", "hay mira", "hai mira", "hey-mira",
+//  "he-mira", "heymira", "heymara", "hey mirah", "he mirah", "hey meera", "he meera",
+//  "Amira", "amira", "a mira", "a mirror", "hey miller", "he miller", "hey milla", "he milla", "hey mila", "he mila",
+//  "hey miwa", "he miwa", "hey mora", "he mora", "hey moira", "he moira",
+//  "hey miera", "he miera", "hey mura", "he mura", "hey maira", "he maira",
+//  "hey meara", "he meara", "hey mara", "he mara", "hey mina", "he mina",
+//  "hey mirra", "he mirra", "hey mir", "he mir", "hey miro", "he miro",
+//  "hey miruh", "he miruh", "hey meerah", "he meerah", "hey meira", "he meira",
+//  "hei mira", "hi mira", "hey mere", "he mere", "hey murra", "he murra",
+//  "hey mera", "he mera", "hey neera", "he neera", "hey murah", "he murah",
+//  "hey mear", "he mear", "hey miras", "he miras", "hey miora", "he miora", "hey miri", "he miri",
+//  "hey maura", "he maura", "hey maya", "he maya", "hey moora", "he moora",
+//  "hey mihrah", "he mihrah", "ay mira", "ey mira", "yay mira", "hey mihra",
+//  "hey mera", "hey mira", "hey mila", "hey mirra"
+// ];
+  
 /**
  * Manages notifications for users
  */
@@ -166,7 +188,7 @@ class TranscriptionManager {
     if (!this.activePhotos.has(this.sessionId)) {
       // if we don't have a photo, get one
       if (this.session.capabilities?.hasCamera) {
-        const getPhotoPromise = this.session.camera.requestPhoto({size: "small"});
+        const getPhotoPromise = this.session.camera.requestPhoto();
         getPhotoPromise.then(photoData => {
           this.activePhotos.set(this.sessionId, {
             promise: getPhotoPromise,
@@ -349,7 +371,10 @@ class TranscriptionManager {
         if (photo?.promise) {
           // wait up to 3 seconds for promise to resolve
           this.logger.debug("Waiting for photo to resolve");
-          const result = await Promise.race([photo.promise, new Promise<null>(resolve => setTimeout(resolve, 3000))]) as PhotoData | null;
+          const result = await Promise.race([
+            photo.promise,
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
+          ]) as PhotoData | null;
           this.logger.debug(result, "Photo resolved");
           return result;
         } else {
@@ -398,7 +423,7 @@ class TranscriptionManager {
         );
 
         if (response.ok) {
-          const data = await response.json();
+          const data: any = await response.json();
           const address = data.address;
 
           if (address) {
@@ -420,7 +445,7 @@ class TranscriptionManager {
         );
 
         if (timezoneResponse.ok) {
-          const timezoneData = await timezoneResponse.json();
+          const timezoneData: any = await timezoneResponse.json();
 
           if (timezoneData.timezone) {
             locationInfo.timezone = {
@@ -487,13 +512,13 @@ class TranscriptionManager {
 
       try {
         transcriptionResponse = JSON.parse(responseText);
-      } catch (jsonError) {
+      } catch (jsonError: any) {
         this.logger.error(jsonError, `[Session ${this.sessionId}]: JSON parsing failed:`);
         this.logger.error({ responseText }, `[Session ${this.sessionId}]: Response text that failed to parse: ${responseText}`);
         throw new Error(`Failed to parse JSON response: ${jsonError.message}`);
       }
 
-    } catch (fetchError) {
+    } catch (fetchError: any) {
       this.logger.error(fetchError, `[Session ${this.sessionId}]: Error fetching transcript:` + fetchError.message);
       this.session.layouts.showTextWall(
         wrapText("Sorry, there was an error retrieving your transcript. Please try again.", 30),
