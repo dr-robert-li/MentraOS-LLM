@@ -1,10 +1,10 @@
 # Use Node.js 20 Alpine as base image (required by dependencies, compatible with Cloud Run)
-FROM node:20-alpine
+FROM node:20-alpine AS build
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies for build
 RUN apk add --no-cache \
     python3 \
     make \
@@ -16,17 +16,30 @@ RUN apk add --no-cache \
 COPY package*.json ./
 COPY bun.lock* ./
 
-# Install dependencies (include dev for build, then prune)
+# Install dependencies (include dev for build)
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN npm install
-RUN npm run build:node
-RUN npm prune --production
+RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Build step already executed above
-# RUN npm run build:node
+# Build the application
+RUN npm run build:node
+
+# Production image
+FROM node:20-alpine AS runtime
+WORKDIR /app
+
+# Install curl for health check
+RUN apk add --no-cache curl
+
+# Copy package files and install only production dependencies
+COPY --from=build /app/package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built application and assets
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/src/public ./src/public
 
 # Expose port (Google Cloud Run uses PORT environment variable)
 EXPOSE 80
