@@ -22,45 +22,27 @@ spec:
           value: "80"
         - name: PACKAGE_NAME
           value: "MentraOS-LLM"
-        - name: AUGMENTOS_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: augmentos-api-key
-              key: key
-        - name: LOCATIONIQ_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: locationiq-token
-              key: key
-        - name: OPENAI_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: openai-api-key
-              key: key
-        - name: ANTHROPIC_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: anthropic-api-key
-              key: key
-        - name: PERPLEXITY_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: perplexity-api-key
-              key: key
-        - name: GOOGLE_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: google-api-key
-              key: key
-        - name: AZURE_OPENAI_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: azure-openai-api-key
-              key: key
         - name: LLM_PROVIDER
           value: "perplexity"
         - name: LLM_MODEL
           value: "sonar"
+        # Add your API keys here as environment variables
+        # Replace YOUR_ACTUAL_KEY with your real API keys
+        - name: AUGMENTOS_API_KEY
+          value: "YOUR_AUGMENTOS_API_KEY"
+        - name: PERPLEXITY_API_KEY
+          value: "YOUR_PERPLEXITY_API_KEY"
+        - name: OPENAI_API_KEY
+          value: "YOUR_OPENAI_API_KEY"
+        - name: ANTHROPIC_API_KEY
+          value: "YOUR_ANTHROPIC_API_KEY"
+        - name: LOCATIONIQ_TOKEN
+          value: "YOUR_LOCATIONIQ_TOKEN"
+        # Optional: uncomment and add if needed
+        # - name: GOOGLE_API_KEY
+        #   value: "YOUR_GOOGLE_API_KEY"
+        # - name: AZURE_OPENAI_API_KEY
+        #   value: "YOUR_AZURE_API_KEY"
         resources:
           limits:
             cpu: 1000m

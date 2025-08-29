@@ -2,7 +2,7 @@
   "name": "MentraLLM",
   "description": "BYO LLM to MentraOS",
   "onboardingInstructions": "",
-  "publicUrl": "https://mentraos-llm.chum-829.workers.dev",
+  "publicUrl": "https://mentraos-llm-410741782200.us-central1.run.app",
   "logoURL": "https://imagedelivery.net/nrc8B2Lk8UIoyW7fY8uHVg/aed21a21-f1a4-4306-a276-8f3f46e08200/square",
   "appType": "background",
   "permissions": [
@@ -34,12 +34,15 @@
   "settings": [
     {
       "type": "group",
+      "key": "",
+      "label": "",
       "title": "LLM Provider Settings"
     },
     {
       "type": "select",
       "key": "llm_provider",
       "label": "LLM Provider",
+      "defaultValue": "perplexity",
       "options": [
         {
           "label": "OpenAI",
@@ -61,8 +64,7 @@
           "label": "Custom",
           "value": "custom"
         }
-      ],
-      "defaultValue": "perplexity"
+      ]
     },
     {
       "type": "text",
