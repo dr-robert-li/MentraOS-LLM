@@ -100,10 +100,14 @@ CLOUD_HOST_NAME=prod.augmentos.org
 ### Development
 
 ```bash
-# Start development server with hot reload
+# Start Express.js development server with hot reload
 bun run dev
 # or
 npm run dev
+
+# Start Cloudflare Workers local development (NEW!)
+npm run dev:worker        # Local mode with .dev.vars
+npm run dev:worker:remote # Remote mode
 
 # Run with Docker
 npm run docker:dev
@@ -111,6 +115,18 @@ npm run docker:dev
 # Test LLM providers
 node test-llm-provider.js
 ```
+
+#### Local Workers Development
+The project includes a `.dev.vars` file for local Cloudflare Workers development with pre-configured API keys. This allows you to:
+
+- **Test webhook endpoints locally** before deploying
+- **Debug MentraOS event processing** with real API keys
+- **Develop with live LLM providers** in local environment
+
+**Local Development URLs:**
+- Health: `http://localhost:8787/health`
+- Webhook: `http://localhost:8787/webhook`
+- API Info: `http://localhost:8787/api/info`
 
 ### Production Deployment
 
