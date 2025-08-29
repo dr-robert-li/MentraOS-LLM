@@ -541,8 +541,8 @@ class TranscriptionManager {
         throw new Error(`HTTP ${transcriptResponse.status}: ${transcriptResponse.statusText}`);
       }
 
-      const responseText = await transcriptResponse.text();
-      this.logger.debug(`[Session ${this.sessionId}]: Raw response body:`, responseText);
+      const responseText: string = await transcriptResponse.text();
+      this.logger.debug(`[Session ${this.sessionId}]: Raw response body: ${responseText}`);
 
       if (!responseText || responseText.trim() === '') {
         throw new Error('Empty response body received');
@@ -861,7 +861,7 @@ class MiraServer extends AppServer {
     });
 
     // Subscribe to button presses
-    session.events.onButtonPress((buttonData) => {
+    session.events.onButtonPress?.((buttonData: any) => {
       logger.info(`[Session ${sessionId}] Button press:`, buttonData);
     });
 
