@@ -108,7 +108,33 @@ AUGMENTOS_API_KEY=your_augmentos_key
 CLOUD_HOST_NAME=prod.augmentos.org
 ```
 
-### Development
+### Event Subscriptions
+
+The server now listens for additional device events using the generic `session.events.on` API:
+
+- **Glasses Connection State**  
+  Subscribed via:  
+  ```ts
+  session.events.on?.("glassesConnectionState", (state: any) => {
+    logger.info(`[Session ${sessionId}] Glasses connection state:`, state);
+  });
+  ```
+  This replaces the previous `onGlassesConnectionState` method which was not part of the `EventManager` type.
+
+- **Other Events**  
+  The server also subscribes to:
+  - `onHeadPosition`
+  - `onButtonPress`
+  - `onGlassesBattery`
+  - `onPhoneBattery`
+  - `onVoiceActivity`
+  - `onPhoneNotificationDismissed`
+  - `onAudioChunk`
+  - `onPhoneNotifications`
+
+These subscriptions allow the server to react to device state changes and user interactions in real time.
+
+## Development
 
 ```bash
 # Start Express.js development server with hot reload
@@ -344,14 +370,6 @@ src/
 4. Add environment variables
 5. Update tests and documentation
 
-## 📄 License
+## 🙏 Acknowledgements
 
-[License details here]
-
-## 🤝 Contributing
-
-[Contributing guidelines here]
-
----
-
-**MentraOS** - Intelligent contextual assistance for smart glasses, powered by cutting-edge AI technology.
+Special thanks to **TeamOpenSmartGlasses**, the **Mentra-Community**, and the original [Mira repository](https://github.com/Mentra-Community/Mira) for their foundational work and inspiration.
