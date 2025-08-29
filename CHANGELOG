@@ -11,10 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bundled `@augmentos/sdk` with esbuild for Cloudflare Workers compatibility.
 - Updated build process to use esbuild bundling instead of tsc-only.
 - Expanded LLM model support:
-  - OpenAI/Azure: GPT‑4o, GPT‑4o‑mini, GPT‑5, GPT‑5‑mini
-  - Anthropic: Claude‑3.5 Sonnet, Claude‑3.5 Haiku, Claude‑4
-  - Google: Gemini‑pro, Gemini‑2.0‑flash, Gemini‑2.0‑flash‑thinking
-  - Perplexity: Sonar, Sonar‑Pro
+  - OpenAI/Azure: GPT‑4o, GPT‑4o‑mini, GPT‑5, GPT‑5‑mini.
+  - Anthropic: Claude‑3.5 Sonnet, Claude‑3.5 Haiku, Claude‑4.
+  - Google: Gemini‑pro, Gemini‑2.0‑flash, Gemini‑2.0‑flash‑thinking.
+  - Perplexity: Sonar, Sonar‑Pro.
 - Added support for user-provided API keys via `/settings`.
 - Improved error handling and fallback logic in `LLMProvider`.
 - Updated documentation (README, setup guides) to reflect new build and deployment requirements.
