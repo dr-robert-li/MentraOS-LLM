@@ -1,5 +1,5 @@
-# Use Node.js 18 Alpine as base image (compatible with Google Cloud Run)
-FROM node:18-alpine
+# Use Node.js 20 Alpine as base image (required by dependencies, compatible with Cloud Run)
+FROM node:20-alpine
 
 # Set working directory
 WORKDIR /app
