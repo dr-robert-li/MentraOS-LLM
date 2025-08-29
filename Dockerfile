@@ -17,6 +17,7 @@ COPY package*.json ./
 COPY bun.lock* ./
 
 # Install dependencies (include dev for build, then prune)
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npm install
 RUN npm run build:node
 RUN npm prune --production
