@@ -10,7 +10,7 @@
     "declarationMap": false,
     "sourceMap": false,
     "noEmit": false,
-    "types": ["@cloudflare/workers-types"]
+    "types": ["@cloudflare/workers-types", "node"]
   },
   "include": [
     "src/worker.ts",
