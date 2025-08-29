@@ -126,6 +126,37 @@ npm run deploy:prod
 npm run deploy:dev
 ```
 
+#### Setting API Keys in Cloudflare Workers
+
+**Method 1: Using Wrangler CLI (Recommended)**
+```bash
+# Set encrypted secrets for API keys
+wrangler secret put PERPLEXITY_API_KEY
+wrangler secret put OPENAI_API_KEY  
+wrangler secret put ANTHROPIC_API_KEY
+
+# Optional: Set other provider keys if needed
+wrangler secret put AZURE_OPENAI_API_KEY
+wrangler secret put GOOGLE_API_KEY
+wrangler secret put LOCATIONIQ_TOKEN
+```
+
+**Method 2: Using Cloudflare Dashboard**
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. Navigate to **Workers & Pages** → **mentraos-llm**
+3. Go to **Settings** → **Variables and Secrets**
+4. Click **Add Variable** → **Encrypt** for each API key
+
+**Essential API Keys:**
+- `PERPLEXITY_API_KEY` - For search-enhanced AI responses
+- `OPENAI_API_KEY` - For GPT-4o, GPT-5 models  
+- `ANTHROPIC_API_KEY` - For Claude models
+
+**Verify Setup:**
+```bash
+curl -X POST https://your-worker.dev/api/test -d '{"message":"test"}'
+```
+
 #### Docker
 ```bash
 # Build production image

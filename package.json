@@ -15,6 +15,8 @@
     "deploy": "wrangler deploy --env=\"\"",
     "deploy:dev": "wrangler deploy --env development",
     "deploy:prod": "wrangler deploy --env production",
+    "dev:worker": "wrangler dev --local",
+    "dev:worker:remote": "wrangler dev",
     "start": "bun src/index.ts",
     "add": "docker exec -it mira-dev bun add",
     "add:dev": "docker exec -it mira-dev bun add -d",
