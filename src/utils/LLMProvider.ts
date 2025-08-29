@@ -50,8 +50,15 @@ export enum LLMService {
 export const LLM_MODEL = process.env.LLM_MODEL || LLMModel.GPT4;
 export const LLM_PROVIDER = process.env.LLM_PROVIDER || LLMService.AZURE;
 
+import { AppSession } from "@mentra/sdk";
+
 export class LLMProvider {
-  static getLLM() {
+  static getLLM(session?: AppSession) {
+    // Read from MentraOS settings if available, otherwise fallback to env
+    const provider = session?.settings.get<string>("llm_provider", process.env.LLM_PROVIDER || LLMService.PERPLEXITY) as LLMService;
+    const model = session?.settings.get<string>("llm_model", process.env.LLM_MODEL || LLMModel.SONAR) as LLMModel;
+    const apiKeyFromSettings = session?.settings.get<string>("llm_api_key", "");
+
     const supportedAzureModels = [
       LLMModel.GPT4,
       LLMModel.GPT4_MINI,
@@ -79,10 +86,6 @@ export class LLMProvider {
       LLMModel.SONAR_PRO,
     ]
 
-    // Convert model to enum value if it's a string
-    const model = typeof LLM_MODEL === 'string' ? LLM_MODEL as LLMModel : LLM_MODEL;
-    const provider = LLM_PROVIDER || LLMService.AZURE;
-
     if (provider === LLMService.AZURE) {
       if (!supportedAzureModels.includes(model as LLMModel)) {
         throw new Error(`Unsupported Azure model: ${model}`);
@@ -91,7 +94,7 @@ export class LLMProvider {
         modelName: model,
         temperature: 0.3,
         maxTokens: 300,
-        azureOpenAIApiKey: AZURE_OPENAI_API_KEY,
+        azureOpenAIApiKey: apiKeyFromSettings || AZURE_OPENAI_API_KEY,
         azureOpenAIApiVersion: AZURE_OPENAI_API_VERSION,
         azureOpenAIApiInstanceName: AZURE_OPENAI_API_INSTANCE_NAME,
         azureOpenAIApiDeploymentName: AZURE_OPENAI_API_DEPLOYMENT_NAME,
@@ -104,7 +107,7 @@ export class LLMProvider {
         modelName: model,
         temperature: 0.3,
         maxTokens: 300,
-        openAIApiKey: OPENAI_API_KEY,
+        openAIApiKey: apiKeyFromSettings || OPENAI_API_KEY,
       });
     } else if (provider === LLMService.ANTHROPIC) {
       if (!supportedAnthropicModels.includes(model as LLMModel)) {
@@ -114,7 +117,7 @@ export class LLMProvider {
         modelName: model,
         temperature: 0.3,
         maxTokens: 300,
-        anthropicApiKey: ANTHROPIC_API_KEY,
+        anthropicApiKey: apiKeyFromSettings || ANTHROPIC_API_KEY,
       });
     } else if (provider === LLMService.GOOGLE) {
       if (!supportedGoogleModels.includes(model as LLMModel)) {
@@ -125,7 +128,7 @@ export class LLMProvider {
         temperature: 0.3,
         maxOutputTokens: 300,
         authOptions: {
-          credentials: GOOGLE_API_KEY ? { private_key: GOOGLE_API_KEY } : undefined,
+          credentials: (apiKeyFromSettings || GOOGLE_API_KEY) ? { private_key: apiKeyFromSettings || GOOGLE_API_KEY } : undefined,
         },
         location: GOOGLE_LOCATION,
       });
@@ -137,7 +140,7 @@ export class LLMProvider {
         model: model,
         temperature: 0.3,
         maxTokens: 300,
-        apiKey: PERPLEXITY_API_KEY,
+        apiKey: apiKeyFromSettings || PERPLEXITY_API_KEY,
       });
     } else {
       throw new Error(`Unsupported LLM provider: ${provider}`);

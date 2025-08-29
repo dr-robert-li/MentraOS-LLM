@@ -68,6 +68,17 @@ cp .env.example .env
 
 ### Environment Configuration
 
+#### MentraOS Settings (Recommended)
+
+You can now configure your LLM provider, model, and API key directly in the MentraOS app settings:
+
+- **LLM Provider**: Choose between OpenAI, Anthropic, Cohere, or Custom
+- **Model Name**: Enter the model identifier (e.g., `gpt-4`, `claude-3-5-sonnet-20241022`)
+- **API Key**: Enter your API key for the chosen provider
+
+These settings are synchronized in real-time with your app and override environment variables.
+
+
 Edit your `.env` file with the required API keys:
 
 ```bash

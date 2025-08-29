@@ -7,6 +7,7 @@ import {
 } from '@mentra/sdk';
 import { MiraAgent } from './agents';
 import { wrapText, TranscriptProcessor } from './utils';
+import { LLMProvider } from './utils/LLMProvider';
 import { getAllToolsForUser } from './agents/tools/TpaTool';
 import { log } from 'console';
 
@@ -594,7 +595,12 @@ class TranscriptionManager {
 
       // Process the query with the Mira agent
       const inputData = { query, photo: await this.getPhoto() };
-      const agentResponse = await this.miraAgent.handleContext(inputData);
+      // Pass session into LLMProvider to ensure correct provider/model/apiKey
+      const llm = LLMProvider.getLLM(this.session);
+      const agentResponse = await this.miraAgent.handleContext({
+        ...inputData,
+        llm
+      });
 
       isRunning = false;
 
@@ -816,6 +822,51 @@ class MiraServer extends AppServer {
       const transcriptionManager = this.transcriptionManagers.get(sessionId);
       transcriptionManager?.handleHeadPosition(headPositionData);
     });
+
+    // Subscribe to button presses
+    session.events.onButtonPress((buttonData) => {
+      logger.info(`[Session ${sessionId}] Button press:`, buttonData);
+    });
+
+    // Subscribe to glasses battery updates
+    session.events.onGlassesBattery((batteryData: any) => {
+      logger.info(`[Session ${sessionId}] Glasses battery update:`, batteryData);
+    });
+
+    // Subscribe to phone battery updates
+    session.events.onPhoneBattery((batteryData: any) => {
+      logger.info(`[Session ${sessionId}] Phone battery update:`, batteryData);
+    });
+
+    // Subscribe to glasses connection state (if supported by SDK)
+    session.events.on?.("glassesConnectionState", (state: any) => {
+      logger.info(`[Session ${sessionId}] Glasses connection state:`, state);
+    });
+
+    // Subscribe to voice activity detection
+    session.events.onVoiceActivity?.((vad: any) => {
+      logger.info(`[Session ${sessionId}] Voice activity detected:`, vad);
+    });
+
+    // Subscribe to notification dismissed
+    session.events.onPhoneNotificationDismissed?.((dismissed: any) => {
+      logger.info(`[Session ${sessionId}] Notification dismissed:`, dismissed);
+    });
+
+    // Subscribe to raw audio chunks
+    session.events.onAudioChunk?.((chunk: any) => {
+      logger.debug(`[Session ${sessionId}] Received audio chunk:`, chunk);
+    });
+
+    // Subscribe to translations
+    // Note: SDK does not expose a direct onTranslation method, use generic handler if needed
+    /*
+    import { StreamType } from "@mentra/sdk";
+    session.events.on(StreamType.TRANSLATION, (translation: any) => {
+      logger.info(`[Session ${sessionId}] Translation:`, translation);
+    });
+    */
+
     // Also listen for setting changes to update subscription strategy dynamically
     session.settings.onChange((settings) => {
       const manager = this.transcriptionManagers.get(sessionId);

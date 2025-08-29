@@ -1,0 +1,78 @@
+{
+  "name": "MentraLLM",
+  "description": "BYO LLM to MentraOS",
+  "onboardingInstructions": "",
+  "publicUrl": "https://mentraos-llm.chum-829.workers.dev",
+  "logoURL": "https://imagedelivery.net/nrc8B2Lk8UIoyW7fY8uHVg/aed21a21-f1a4-4306-a276-8f3f46e08200/square",
+  "appType": "background",
+  "permissions": [
+    {
+      "type": "MICROPHONE",
+      "description": "Required to capture user voice input for transcription and wake word detection."
+    },
+    {
+      "type": "LOCATION",
+      "description": "Required to provide contextual responses based on user location."
+    },
+    {
+      "type": "READ_NOTIFICATIONS",
+      "description": "Required to read incoming phone notifications for context-aware assistance."
+    },
+    {
+      "type": "POST_NOTIFICATIONS",
+      "description": "Required to send notifications and reminders to the user."
+    },
+    {
+      "type": "CALENDAR",
+      "description": "Required to access and manage calendar events for scheduling and reminders."
+    },
+    {
+      "type": "BACKGROUND_LOCATION",
+      "description": "Required to update location context even when the app is running in the background."
+    },
+    {
+      "type": "CAMERA",
+      "description": "Required to capture photos for visual context in queries."
+    },
+    {
+      "type": "AUDIO_OUTPUT",
+      "description": "Required to play audio responses and sound effects."
+    },
+    {
+      "type": "DISPLAY",
+      "description": "Required to show text and visual responses on the device screen."
+    }
+  ],
+  "settings": [
+    {
+      "type": "group",
+      "title": "LLM Provider Settings"
+    },
+    {
+      "type": "select",
+      "key": "llm_provider",
+      "label": "LLM Provider",
+      "options": [
+        {"label": "OpenAI", "value": "openai"},
+        {"label": "Anthropic", "value": "anthropic"},
+        {"label": "Cohere", "value": "cohere"},
+        {"label": "Perplexity", "value": "perplexity"},
+        {"label": "Custom", "value": "custom"}
+      ],
+      "defaultValue": "perplexity"
+    },
+    {
+      "type": "text",
+      "key": "llm_model",
+      "label": "Model Name",
+      "defaultValue": "sonar"
+    },
+    {
+      "type": "text",
+      "key": "llm_api_key",
+      "label": "API Key",
+      "defaultValue": ""
+    }
+  ],
+  "tools": []
+}
