@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3] - 2025-08-29
+### Changed
+- **BREAKING CHANGE**: Migrated from Cloudflare Workers to Node.js/Google Cloud Run deployment
+- Removed all Cloudflare-specific dependencies:
+  - `@cloudflare/workers-types`
+  - `wrangler` CLI tool
+  - `KVNamespace` and `DurableObject` interfaces
+  - `wrangler.toml` and `tsconfig.worker.json` configuration files
+- Replaced Cloudflare Durable Objects with in-memory `MentraOSSessionManager`
+- Replaced KV storage with memory-based session storage with automatic cleanup
+- Updated build system from Cloudflare Workers target to Node.js TypeScript compilation
+- Added Docker support with optimized `Dockerfile` for Google Cloud Run
+- Added `cloudrun.yaml` for Knative/Google Cloud Run deployment configuration
+- Updated package.json scripts:
+  - Removed: `build:worker`, `deploy`, `deploy:dev`, `deploy:prod`, `dev:worker`
+  - Added: `build:node`, `deploy:gcloud`, `deploy:gcloud:build`
+  - Updated: `build` now uses TypeScript + Node.js target, `start` uses Node.js
+- Completely rewrote README.md with Google Cloud Run deployment instructions
+- Added migration guide explaining changes from Cloudflare Workers
+- Environment variables now used instead of Cloudflare secrets for API keys
+
+### Technical Details
+- Session management moved from Durable Objects to in-memory Map with auto-cleanup
+- Server runs on standard Node.js with Express.js compatibility  
+- Docker container optimized for Google Cloud Run (Node.js 18 Alpine)
+- Supports deployment to any Node.js platform (AWS ECS, Azure Container Apps, etc.)
+
+### Author
+- Dr. Robert Li
+
 ## [0.2] - 2025-08-29
 ### Changed
 - Switched Cloudflare Worker entrypoint from `worker-simple.ts` to `index.ts` for full MentraOS SDK integration.

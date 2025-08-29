@@ -1,6 +1,6 @@
 {
   "name": "@augmentos/mira",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "main": "dist/index.js",
   "scripts": {
     "dev": "bun --hot src/index.ts",
@@ -9,15 +9,12 @@
     "docker:stop": "docker compose -f docker/docker-compose.dev.yml -p dev down",
     "docker:build": "docker compose -f docker/docker-compose.dev.yml -p dev build",
     "ngrok": "ngrok http --url=mira.ngrok.dev 8040",
-    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
-    "build:worker": "tsc src/index.ts --outDir dist --target ES2022 --module ESNext --moduleResolution bundler --esModuleInterop --skipLibCheck --lib ES2022,WebWorker --types @cloudflare/workers-types",
-    "build:worker:full": "tsc --project tsconfig.worker.json && bun build ./dist/worker.js --outdir ./dist --target node --format esm --outfile dist/worker.js",
-    "deploy": "wrangler deploy --env=\"\"",
-    "deploy:dev": "wrangler deploy --env development",
-    "deploy:prod": "wrangler deploy --env production",
-    "dev:worker": "wrangler dev --local",
-    "dev:worker:remote": "wrangler dev",
-    "start": "bun src/index.ts",
+    "build": "tsc && bun build ./dist/index.js --outdir ./dist --target node",
+    "build:node": "tsc",
+    "start": "node dist/index.js",
+    "start:bun": "bun src/index.ts",
+    "deploy:gcloud": "gcloud run deploy mentra-os-llm --source . --region=us-central1 --allow-unauthenticated --port=80",
+    "deploy:gcloud:build": "gcloud builds submit --tag gcr.io/PROJECT_ID/mentra-os-llm",
     "add": "docker exec -it mira-dev bun add",
     "add:dev": "docker exec -it mira-dev bun add -d",
     "remove": "docker exec -it mira-dev bun remove",
@@ -59,8 +56,6 @@
     "ws": "^8.18.1"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240620.0",
-    "typescript": "^5.9.2",
-    "wrangler": "^4.33.1"
+    "typescript": "^5.9.2"
   }
 }

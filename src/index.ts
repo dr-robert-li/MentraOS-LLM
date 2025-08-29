@@ -11,41 +11,17 @@ import { LLMProvider } from './utils/LLMProvider';
 import { getAllToolsForUser } from './agents/tools/TpaTool';
 import { log } from 'console';
 
-// Export SessionManager for Durable Objects
-export { MentraOSSessionManager } from './SessionManager';
+// Export SessionManager for Node.js deployment
+export { MentraOSSessionManager, sessionManager } from './SessionManager';
 
-// Environment interface for Cloudflare Workers
+// Environment interface for Node.js deployment
 interface Env {
-  MENTRAOS_LLM: KVNamespace;
-  MENTRAOS_LLM_SESSIONS: DurableObjectNamespace;
   // Environment variables
   AUGMENTOS_API_KEY?: string;
   LOCATIONIQ_TOKEN?: string;
   PACKAGE_NAME?: string;
   PORT?: string;
-}
-
-// Extend global types for Cloudflare Workers
-declare global {
-  interface KVNamespace {
-    get(key: string): Promise<string | null>;
-    put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
-    delete(key: string): Promise<void>;
-    list(options?: { prefix?: string }): Promise<{ keys: { name: string }[] }>;
-  }
-  
-  interface DurableObjectNamespace {
-    newUniqueId(): DurableObjectId;
-    idFromName(name: string): DurableObjectId;
-    idFromString(id: string): DurableObjectId;
-    get(id: DurableObjectId): any;
-  }
-  
-  interface DurableObjectId {
-    toString(): string;
-  }
-  
-  
+  REDIS_URL?: string;
 }
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 80;

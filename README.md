@@ -1,384 +1,321 @@
-# MentraOS - AI-Powered Smart Glasses Platform
+# MentraOS LLM
 
-MentraOS is a comprehensive AI-powered platform for smart glasses that provides contextual assistance by integrating notifications, location data, and multiple LLM providers. Built for [MentraOS](https://docs.mentra.glass/), the smart glasses operating system, it offers intelligent notification filtering, location-aware responses, and search-enhanced AI capabilities.
+AI-powered virtual assistant for Mentra smart glasses, deployable to Google Cloud Run and other Node.js platforms.
 
-## 🎯 Features
+## Features
 
-### 🤖 **Multi-LLM Provider Support**
-- **OpenAI**: GPT-4o, GPT-4o-mini, **GPT-5** ✨, **GPT-5-mini** ✨
-- **Anthropic**: Claude 3.5 Sonnet, Claude 3.5 Haiku, Claude 4
-- **Google**: Gemini Pro, Gemini 2.0 Flash, Gemini 2.0 Pro
-- **Azure OpenAI**: Enterprise-grade OpenAI models including GPT-5
-- **Perplexity**: Search-enhanced AI with Sonar and Sonar Pro models
+- 🎯 **Wake Word Detection** - Responds to "Hey Mentra" and variations
+- 🧠 **Multi-LLM Support** - OpenAI GPT-4/5, Anthropic Claude, Google Gemini, Perplexity, Azure OpenAI
+- 📍 **Location Aware** - LocationIQ integration for context-aware responses
+- 📱 **Notification Processing** - Smart filtering and summarization
+- 🔊 **Voice Processing** - Real-time transcription and audio responses
+- 📷 **Vision Support** - Photo analysis with multimodal LLMs
+- ⚡ **High Performance** - Fast Node.js server with in-memory session storage
+- 🐳 **Cloud Ready** - Docker container optimized for Google Cloud Run
 
-### 🔔 **Intelligent Notification Management**
-- **Smart filtering** and ranking (1-10 importance scale)
-- **Contextual summaries** for HUD display (under 50 characters)
-- **Personal message prioritization** from known contacts
-- **Deadline and reminder alerts** with highest priority
-- **System notification filtering** (excludes non-essential alerts)
-
-### 📍 **Location-Aware Intelligence**
-- **Real-time location tracking** with reverse geocoding
-- **Timezone-aware responses** and time conversions
-- **Location-specific search results** and recommendations
-- **Graceful fallbacks** when location services fail
-- **DST (Daylight Saving Time) handling**
-
-### 🔍 **Enhanced Search Capabilities**
-- **Web search integration** via Jina AI
-- **Location-context search** for relevant results
-- **Agent-accessible search tools** for research tasks
-
-## 🏗️ Architecture
-
-### **Core Agents**
-- **MiraAgent**: Primary AI assistant with contextual awareness
-- **NotificationFilterAgent**: Intelligent notification processing
-- **NewsAgent**: News and current events integration
-- **AgentGateKeeper**: Request routing and management
-
-### **Deployment Options**
-- **Cloudflare Workers**: Serverless edge deployment
-- **Docker**: Containerized local/cloud deployment
-- **Express.js**: Development server with hot reload
-
-## 📦 Requirements
-
-- Cloudflare Workers account (for deployment)
-- Wrangler CLI installed and authenticated
-- Node.js 22+ or Bun 1.2+
-- esbuild (bundles @augmentos/sdk for Workers)
-- API keys for your chosen LLM provider(s)
-- LocationIQ API key (for location services)
-
-## 🚀 Getting Started
+## Quick Start
 
 ### Prerequisites
-- Node.js 22+ or Bun 1.2+
-- API keys for your chosen LLM provider(s)
-- LocationIQ API key (for location services)
 
-### Installation
+- Node.js 18+ (or Bun runtime)
+- Google Cloud account (for deployment)
+- API keys for your preferred LLM providers
+- LocationIQ token (optional, for location services)
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd MentraOS-LLM
+### Environment Setup
 
-# Install dependencies
-bun install
-# or
-npm install
-
-# Copy environment template
-cp .env.example .env
-```
-
-### Environment Configuration
-
-#### MentraOS Settings (Recommended)
-
-You can now configure your LLM provider, model, and API key directly in the MentraOS app settings:
-
-- **LLM Provider**: Choose between OpenAI, Anthropic, Cohere, or Custom
-- **Model Name**: Enter the model identifier (e.g., `gpt-4`, `claude-3-5-sonnet-20241022`)
-- **API Key**: Enter your API key for the chosen provider
-
-These settings are synchronized in real-time with your app and override environment variables.
-
-
-Edit your `.env` file with the required API keys:
+Set your environment variables using a `.env` file or your deployment platform:
 
 ```bash
-# LLM Provider Selection
-LLM_PROVIDER=openai  # openai, anthropic, azure, google, perplexity
-LLM_MODEL=gpt-4o     # See LLMModel enum for available models
+# Required: Core API keys
+AUGMENTOS_API_KEY=your_augmentos_key
+PACKAGE_NAME=MentraOS-LLM
+PORT=80
+
+# LLM Provider Configuration
+LLM_PROVIDER=perplexity
+LLM_MODEL=sonar
 
 # API Keys (set only what you need)
 OPENAI_API_KEY=your_openai_key
 ANTHROPIC_API_KEY=your_anthropic_key
 PERPLEXITY_API_KEY=your_perplexity_key
 
-# Azure OpenAI (if using Azure)
+# Optional providers
 AZURE_OPENAI_API_KEY=your_azure_key
-AZURE_OPENAI_API_INSTANCE_NAME=your_instance
-AZURE_OPENAI_API_DEPLOYMENT_NAME=your_deployment
-
-# Google Cloud (if using Google models)
 GOOGLE_API_KEY=your_google_key
-GOOGLE_PROJECT_ID=your_project_id
-
-# Location Services
-LOCATIONIQ_TOKEN=your_locationiq_key
-
-# AugmentOS Integration
-AUGMENTOS_API_KEY=your_augmentos_key
-CLOUD_HOST_NAME=prod.augmentos.org
+LOCATIONIQ_TOKEN=your_locationiq_token
 ```
 
-### Event Subscriptions
+### Local Development
 
-The server now listens for additional device events using the generic `session.events.on` API:
+```bash
+# Install dependencies
+bun install
+# or
+npm install
 
-- **Glasses Connection State**  
-  Subscribed via:  
-  ```ts
-  session.events.on?.("glassesConnectionState", (state: any) => {
-    logger.info(`[Session ${sessionId}] Glasses connection state:`, state);
-  });
-  ```
-  This replaces the previous `onGlassesConnectionState` method which was not part of the `EventManager` type.
+# Start development server
+npm run dev
+# or
+bun run dev
 
-- **Other Events**  
-  The server also subscribes to:
-  - `onHeadPosition`
-  - `onButtonPress`
-  - `onGlassesBattery`
-  - `onPhoneBattery`
-  - `onVoiceActivity`
-  - `onPhoneNotificationDismissed`
-  - `onAudioChunk`
-  - `onPhoneNotifications`
+# Build for production
+npm run build
+```
 
-These subscriptions allow the server to react to device state changes and user interactions in real time.
+### Deploy to Google Cloud Run
+
+#### Method 1: Direct from Source (Recommended)
+
+```bash
+# Replace PROJECT_ID with your Google Cloud project ID
+gcloud config set project YOUR_PROJECT_ID
+
+# Deploy directly from source
+npm run deploy:gcloud
+```
+
+#### Method 2: Container Image
+
+```bash
+# Build and deploy container image
+npm run deploy:gcloud:build
+
+# Deploy from container registry
+gcloud run deploy mentra-os-llm \
+  --image gcr.io/YOUR_PROJECT_ID/mentra-os-llm \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 80
+```
+
+#### Set Environment Variables in Cloud Run
+
+After deployment, set your environment variables in Google Cloud Console:
+
+1. Go to [Google Cloud Run Console](https://console.cloud.google.com/run)
+2. Click on your **mentra-os-llm** service
+3. Click **EDIT & DEPLOY NEW REVISION**
+4. Go to **Variables & Secrets** → **Environment Variables**
+5. Add your API keys:
+   - `AUGMENTOS_API_KEY`
+   - `PERPLEXITY_API_KEY`
+   - `OPENAI_API_KEY`
+   - `ANTHROPIC_API_KEY`
+   - `LOCATIONIQ_TOKEN`
+   - `LLM_PROVIDER=perplexity`
+   - `LLM_MODEL=sonar`
+
+## API Endpoints
+
+### Health Check
+```
+GET /health
+```
+Returns service status, version, and available features.
+
+### Webhook Handler
+```
+POST /webhook
+```
+Handles incoming events from MentraOS platform.
+
+### Test Endpoint
+```
+POST /api/test
+```
+Test endpoint for validating LLM configuration.
+
+## Architecture
+
+### Core Components
+
+- **MiraAgent**: Main conversational AI agent
+- **TranscriptionManager**: Handles voice input and wake word detection  
+- **NotificationsManager**: Processes and filters phone notifications
+- **LLMProvider**: Manages multiple LLM providers and routing
+- **SessionManager**: In-memory session management with automatic cleanup
+
+### Data Flow
+
+1. **Voice Input** → Wake word detection → Transcription processing
+2. **Context Building** → Location + Photos + Notifications + History
+3. **LLM Processing** → Multi-provider routing with fallbacks
+4. **Response** → Text-to-speech + Visual display
+
+### Storage
+
+- **In-Memory Storage**: Fast session management with automatic cleanup
+- **Session Data**: Conversation history, user preferences, location context
+- **Auto-cleanup**: Old sessions purged automatically every hour
+- **Scalable**: Can be extended to use Redis, PostgreSQL, or other persistent storage
+
+## Configuration
+
+### Supported LLM Providers
+
+| Provider | Models | Features |
+|----------|--------|----------|
+| **Perplexity** | sonar, sonar-pro | Web search, real-time data |
+| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-5 | Advanced reasoning, vision |
+| **Anthropic** | claude-3-5-sonnet, claude-3-5-haiku | Long context, safety |
+| **Google** | gemini-pro, gemini-2.0-flash | Multimodal, fast inference |
+| **Azure OpenAI** | gpt-4o, gpt-4o-mini | Enterprise compliance |
+
+### Wake Words
+
+The system recognizes variations of "Hey Mentra":
+- Primary: "hey mentra", "hi mentra"
+- Variations: "hey mantra", "hey mentor", "hey menta"
+- Phonetic: "he mentra", "hai mentra", "hei mentra"
 
 ## Development
 
+### Local Development
+
 ```bash
-# Start Express.js development server with hot reload
-bun run dev
-# or
+# Install dependencies
+bun install
+
+# Start development server with hot reload
 npm run dev
 
-# Start Cloudflare Workers local development (NEW!)
-npm run dev:worker        # Local mode with .dev.vars
-npm run dev:worker:remote # Remote mode
+# Build TypeScript
+npm run build:node
 
-# Run with Docker
-npm run docker:dev
+# Start production server
+npm start
+```
 
+### Testing
+
+```bash
 # Test LLM providers
 node test-llm-provider.js
+
+# Health check
+curl http://localhost:80/health
 ```
 
-#### Local Workers Development
-The project includes a `.dev.vars` file for local Cloudflare Workers development with pre-configured API keys. This allows you to:
-
-- **Test webhook endpoints locally** before deploying
-- **Debug MentraOS event processing** with real API keys
-- **Develop with live LLM providers** in local environment
-
-**Local Development URLs:**
-- Health: `http://localhost:8787/health`
-- Webhook: `http://localhost:8787/webhook`
-- API Info: `http://localhost:8787/api/info`
-
-### Production Deployment
-
-#### Cloudflare Workers
-```bash
-# Build for Workers
-npm run build:worker
-
-# Deploy to production
-npm run deploy:prod
-
-# Deploy to development
-npm run deploy:dev
-```
-
-#### Setting API Keys in Cloudflare Workers
-
-**Method 1: Using Wrangler CLI (Recommended)**
-```bash
-# Set encrypted secrets for API keys
-wrangler secret put PERPLEXITY_API_KEY
-wrangler secret put OPENAI_API_KEY  
-wrangler secret put ANTHROPIC_API_KEY
-
-# Optional: Set other provider keys if needed
-wrangler secret put AZURE_OPENAI_API_KEY
-wrangler secret put GOOGLE_API_KEY
-wrangler secret put LOCATIONIQ_TOKEN
-```
-
-**Method 2: Using Cloudflare Dashboard**
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
-2. Navigate to **Workers & Pages** → **mentraos-llm**
-3. Go to **Settings** → **Variables and Secrets**
-4. Click **Add Variable** → **Encrypt** for each API key
-
-**Essential API Keys:**
-- `PERPLEXITY_API_KEY` - For search-enhanced AI responses
-- `OPENAI_API_KEY` - For GPT-4o, GPT-5 models  
-- `ANTHROPIC_API_KEY` - For Claude models
-
-**Environment Variables (Not Encrypted):**
-```bash
-# Set default provider and model configuration
-wrangler secret put LLM_PROVIDER
-# Enter: perplexity
-
-wrangler secret put LLM_MODEL  
-# Enter: sonar
-```
-
-**Or via Cloudflare Dashboard:**
-1. Go to **Workers & Pages** → **mentraos-llm** → **Settings** → **Variables and Secrets**
-2. Click **Add Variable** (NOT encrypted) for:
-   - Variable name: `LLM_PROVIDER`, Value: `perplexity`
-   - Variable name: `LLM_MODEL`, Value: `sonar`
-
-**Verify Setup:**
-```bash
-curl -X POST https://mentraos-llm.chum-829.workers.dev/api/test \
-  -H "Content-Type: application/json" \
-  -d '{"message":"test"}'
-```
-
-#### Docker
-```bash
-# Build production image
-npm run image:build
-
-# Run production container
-npm run prod
-```
-
-## 📱 API Endpoints
-
-### Health Check
-```http
-GET /health
-```
-
-### API Information
-```http
-GET /api/info
-```
-
-### MentraOS Webhook (NEW!)
-```http
-POST /webhook
-Content-Type: application/json
-
-{
-  "type": "notification",
-  "notifications": [...],
-  "timestamp": "2025-08-29T09:00:00Z"
-}
-```
-
-**Supported Event Types:**
-- `notification` - Smart glasses notification events
-- `location` - User location updates  
-- `user_context` - Context changes (notifications, location, etc.)
-- `health_check` - MentraOS health checks
-
-### API Testing
-```http
-POST /api/test
-Content-Type: application/json
-
-{
-  "provider": "perplexity",
-  "model": "sonar",
-  "message": "What's the weather like today?"
-}
-```
-
-## 🧪 Testing
+### Building
 
 ```bash
-# Run comprehensive LLM provider tests
-npm test
+# Build TypeScript for Node.js
+npm run build:node
 
-# Test specific configuration
-node simple-test.js
-
-# Lint code
-npm run lint
+# Build for production (includes TypeScript + bundling)
+npm run build
 ```
 
-## 📚 Supported Models
+## Deployment Options
 
-### OpenAI
-- `gpt-4o` - GPT-4 Omni
-- `gpt-4o-mini` - GPT-4 Omni Mini
-- `gpt-5` - **GPT-5** ✨ - Latest flagship model with enhanced reasoning
-- `gpt-5-mini` - **GPT-5 Mini** ✨ - Efficient version of GPT-5
+### Google Cloud Run (Recommended)
 
-### Anthropic
-- `claude-3-5-sonnet-20241022` - Claude 3.5 Sonnet
-- `claude-3-5-haiku-20241022` - Claude 3.5 Haiku
-- `claude-3-5-sonnet-20250108` - Claude 4/Latest Sonnet
+```bash
+# Deploy from source
+npm run deploy:gcloud
 
-### Google
-- `gemini-pro` - Gemini Pro
-- `gemini-2.0-flash-exp` - Gemini 2.0 Flash
-- `gemini-2.0-flash-thinking-exp` - Gemini 2.0 Pro
-
-### Perplexity
-- `sonar` - Perplexity Sonar (search-enhanced)
-- `sonar-pro` - Perplexity Sonar Pro (advanced search)
-
-## 🆕 **GPT-5 Integration Notes**
-
-### **Latest Features**
-- **Enhanced Reasoning**: GPT-5 offers significantly improved reasoning capabilities
-- **New Parameters**: Supports `reasoning_effort` and `verbosity` controls
-- **Streaming Updates**: New delta format for tool calls and responses
-
-### **LangChain Compatibility**
-- ✅ **Supported**: GPT-5 and GPT-5-mini work with latest `@langchain/openai` package
-- ⚠️ **Breaking Changes**: Some parameters like `temperature` may be modified or dropped
-- 🔄 **Active Development**: LangChain TypeScript SDK is actively being updated for full compatibility
-
-### **Best Practices**
-- Use the latest `@langchain/openai` package version
-- Test thoroughly when using advanced features like verbosity control
-- Monitor LangChain releases for GPT-5 compatibility improvements
-- Be prepared for parameter adjustments as the API evolves
-
-## 🔧 Configuration
-
-### Notification Filtering
-Notifications are automatically ranked by importance:
-1. **High Priority (1-3)**: Deadlines, reminders, critical alerts
-2. **Medium Priority (4-6)**: Personal messages from known contacts
-3. **Low Priority (7-10)**: General notifications and updates
-
-### Location Services
-- Automatic location updates from smart glasses
-- Reverse geocoding for city/state/country
-- Timezone detection and conversion
-- Fallback to default location if services fail
-
-### Search Integration
-- Web search via Jina AI
-- Optional location context for relevant results
-- Academic research and current events support
-
-## 🛠️ Development
-
-### Project Structure
-```
-src/
-├── agents/          # AI agents and tools
-├── utils/           # LLM providers and utilities
-├── public/          # Static assets
-├── index.ts         # Express server entry point
-└── worker.ts        # Cloudflare Workers entry point
+# Deploy from container
+npm run deploy:gcloud:build
 ```
 
-### Adding New LLM Providers
-1. Add to `LLMService` enum
-2. Add models to `LLMModel` enum
-3. Implement provider logic in `LLMProvider.getLLM()`
-4. Add environment variables
-5. Update tests and documentation
+### Docker (Local/Other Cloud Providers)
 
-## 🙏 Acknowledgements
+```bash
+# Build and run locally
+docker build -t mentraos-llm .
+docker run -p 80:80 -e AUGMENTOS_API_KEY=your_key mentraos-llm
 
-Special thanks to **TeamOpenSmartGlasses**, the **Mentra-Community**, and the original [Mira repository](https://github.com/Mentra-Community/Mira) for their foundational work and inspiration.
+# Or use docker-compose
+npm run prod:detach
+```
+
+### Other Platforms
+
+This Node.js application can be deployed to:
+- **AWS ECS/Fargate** - Container deployment
+- **Azure Container Apps** - Container deployment  
+- **Heroku** - Direct Node.js deployment
+- **Railway/Render** - Direct Node.js deployment
+- **Fly.io** - Container or Node.js deployment
+
+## Monitoring & Debugging
+
+### Google Cloud Run
+- View metrics in Google Cloud Console
+- Check logs via `gcloud logs tail`
+- Monitor performance and scaling
+
+### Local Development
+```bash
+# View application logs
+npm run logs
+
+# Run with debug output
+DEBUG=* npm run dev
+```
+
+### Troubleshooting
+
+1. **Check environment variables** - Ensure all required API keys are set
+2. **Verify API key validity** - Test individual provider endpoints
+3. **Check memory limits** - Google Cloud Run default is 512Mi
+4. **Monitor request timeouts** - Cloud Run default timeout is 300s
+
+Common issues:
+- Missing API keys → Check environment variables
+- Memory exceeded → Increase Cloud Run memory allocation
+- Cold starts → Consider minimum instances for production
+
+## Security
+
+- Environment variables for API key storage
+- Request validation and sanitization
+- Google Cloud IAM integration
+- No sensitive data logged or transmitted
+- Automatic HTTPS on Google Cloud Run
+
+## Performance
+
+- **Cold start**: <2s (Google Cloud Run gen2)
+- **Response time**: 200-2000ms (depending on LLM provider)
+- **Memory usage**: ~256Mi baseline, scales with concurrent requests
+- **Auto-scaling**: 0 to 100+ instances based on traffic
+- **Global deployment**: Available in all Google Cloud regions
+
+## Migration from Cloudflare Workers
+
+This version has been updated to run on Node.js platforms instead of Cloudflare Workers:
+
+### Key Changes
+- ✅ Removed Durable Objects → In-memory session management
+- ✅ Removed KV storage → Memory-based storage with auto-cleanup
+- ✅ Removed Worker-specific APIs → Standard Node.js/Express patterns
+- ✅ Added Docker support → Container-ready deployment
+- ✅ Added Google Cloud Run config → Native cloud deployment
+
+### Benefits
+- 🚀 **Better performance** - No cold start delays from V8 isolates
+- 🔧 **More flexibility** - Full Node.js ecosystem access
+- 💰 **Cost effective** - Pay for actual usage, not execution time
+- 🛠️ **Easier development** - Standard Node.js debugging and tooling
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For issues and questions:
+- Create an issue on GitHub
+- Check the troubleshooting guide
+- Review Google Cloud Run documentation

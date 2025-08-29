@@ -1,0 +1,70 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: mentra-os-llm
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      containerConcurrency: 100
+      timeoutSeconds: 300
+      containers:
+      - image: gcr.io/PROJECT_ID/mentra-os-llm
+        ports:
+        - containerPort: 80
+        env:
+        - name: PORT
+          value: "80"
+        - name: PACKAGE_NAME
+          value: "MentraOS-LLM"
+        - name: AUGMENTOS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: augmentos-api-key
+              key: key
+        - name: LOCATIONIQ_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: locationiq-token
+              key: key
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: openai-api-key
+              key: key
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: anthropic-api-key
+              key: key
+        - name: PERPLEXITY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: perplexity-api-key
+              key: key
+        - name: GOOGLE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: google-api-key
+              key: key
+        - name: AZURE_OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: azure-openai-api-key
+              key: key
+        - name: LLM_PROVIDER
+          value: "perplexity"
+        - name: LLM_MODEL
+          value: "sonar"
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+          requests:
+            cpu: 500m
+            memory: 256Mi
