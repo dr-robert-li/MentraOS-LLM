@@ -11,6 +11,45 @@ import { LLMProvider } from './utils/LLMProvider';
 import { getAllToolsForUser } from './agents/tools/TpaTool';
 import { log } from 'console';
 
+// Export SessionManager for Durable Objects
+export { MentraOSSessionManager } from './SessionManager';
+
+// Environment interface for Cloudflare Workers
+interface Env {
+  MENTRAOS_LLM: KVNamespace;
+  MENTRAOS_LLM_SESSIONS: DurableObjectNamespace;
+  // Environment variables
+  AUGMENTOS_API_KEY?: string;
+  LOCATIONIQ_TOKEN?: string;
+  PACKAGE_NAME?: string;
+  PORT?: string;
+}
+
+// Extend global types for Cloudflare Workers
+declare global {
+  interface KVNamespace {
+    get(key: string): Promise<string | null>;
+    put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+    delete(key: string): Promise<void>;
+    list(options?: { prefix?: string }): Promise<{ keys: { name: string }[] }>;
+  }
+  
+  interface DurableObjectNamespace {
+    newUniqueId(): DurableObjectId;
+    idFromName(name: string): DurableObjectId;
+    idFromString(id: string): DurableObjectId;
+    get(id: DurableObjectId): DurableObjectStub;
+  }
+  
+  interface DurableObjectId {
+    toString(): string;
+  }
+  
+  interface DurableObjectStub {
+    fetch(input: string | URL | Request, init?: RequestInit): Promise<Response>;
+  }
+}
+
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 80;
 const PACKAGE_NAME = process.env.PACKAGE_NAME;
 const AUGMENTOS_API_KEY = process.env.AUGMENTOS_API_KEY;
@@ -51,7 +90,7 @@ const explicitWakeWords = [
   "mentra", "menta"
 ];
 
-// Origina "mira" wake word
+// Original "mira" wake word
 // const explicitWakeWords = [
 //  "hey mira", "he mira", "hey mara", "he mara", "hey mirror", "he mirror",
 //  "hey miara", "he miara", "hey mia", "he mia", "hey mural", "he mural",

@@ -20,7 +20,7 @@ interface QuestionAnswer {
     insight: string;
 }
 
-const systemPromptBlueprint = `You are Mira: a helpful, professional, and concise AI assistant living in smart glasses. You have a friendly yet professional personality and always answer in character as Mira. When asked about yourself or your abilities, respond in a way that reflects your role as the smart glasses assistant, referencing your skills and available tools. Express yourself in a consise, professional, to-the-point manner. Always keep answers under 15 words and never break character.
+const systemPromptBlueprint = `You are Mentra: a helpful, professional, and concise AI assistant living in smart glasses. You have a friendly yet professional personality and always answer in character as Mentra. When asked about yourself or your abilities, respond in a way that reflects your role as the smart glasses assistant, referencing your skills and available tools. Express yourself in a consise, professional, to-the-point manner. Always keep answers under 15 words and never break character.
 
 You are an intelligent assistant that is running on the smart glasses of a user. They sometimes directly talk to you by saying a wake word and then asking a question (User Query). Answer the User Query to the best of your ability. Try to infer the User Query intent even if they don't give enough info. The query may contain some extra unrelated speech not related to the query - ignore any noise to answer just the user's intended query. Make your answer concise, leave out filler words, make the answer direct and professional yet friendly, answer in 15 words or less (no newlines), but don't be overly brief (e.g. for weather, give temp. and rain). Use telegraph style writing.
 
@@ -243,8 +243,30 @@ export class MiraAgent implements Agent {
 
       const photoContext = photo ? `The attached photo is what the user can currently see.  It may or may not be relevant to the query.  If it is relevant, use it to answer the query.` : '';
 
-      const llm = LLMProvider.getLLM().bindTools(this.agentTools);
-      const toolNames = this.agentTools.map((tool) => tool.name+": "+tool.description || "");
+      // Get LLM instance (session-aware if passed in userContext)
+      const llmInstance = userContext.llm ?? LLMProvider.getLLM();
+      if (!llmInstance) {
+        console.error("MiraAgent: No LLM instance available. Check API key configuration.");
+        return "Sorry, I'm having trouble connecting to the AI service. Please check your API key settings and try again.";
+      }
+      if (typeof (llmInstance as any).bindTools !== "function") {
+        console.error("MiraAgent: LLM instance does not support bindTools()");
+        return "Sorry, there's a configuration issue with the AI service. Please contact support.";
+      }
+      
+      let llm;
+      try {
+        llm = (llmInstance as any).bindTools(this.agentTools);
+      } catch (error) {
+        console.error("MiraAgent: Error binding tools to LLM:", error);
+        return "Sorry, I'm having trouble initializing my tools. Please try again or check your settings.";
+      }
+
+      const toolNames = this.agentTools.map((tool) => {
+        const name = tool?.name ?? "Unnamed Tool";
+        const description = tool?.description ?? "";
+        return `${name}: ${description}`;
+      });
 
       // Replace the {tool_names} placeholder with actual tool names and descriptions
       const systemPrompt = systemPromptBlueprint

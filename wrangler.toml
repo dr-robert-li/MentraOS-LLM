@@ -19,10 +19,22 @@ LLM_MODEL = "sonar"
 [build]
 command = "npm run build:worker"
 
-# If you need KV storage, D1 database, or other Cloudflare services
-# [[kv_namespaces]]
-# binding = "MY_KV"
-# id = "your-kv-namespace-id"
+# KV namespace for session persistence - run: npx wrangler kv namespace create mentraos-llm
+# Then replace <GENERATED_NAMESPACE_ID> with the actual ID from the command output
+kv_namespaces = [
+  { binding = "MENTRAOS_LLM", id = "<GENERATED_NAMESPACE_ID>" }
+]
+
+# Durable Objects for session management with SQLite backend (FREE storage)
+[durable_objects]
+bindings = [
+  { name = "MENTRAOS_LLM_SESSIONS", class_name = "MentraOSSessionManager" }
+]
+
+# Migration to enable SQLite storage backend (FREE)
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["MentraOSSessionManager"]
 
 [observability.logs]
 enabled = true
