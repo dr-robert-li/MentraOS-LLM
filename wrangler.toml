@@ -1,7 +1,6 @@
-name = "mira-llm"
+name = "mentraos-llm"
 main = "dist/worker.js"
 compatibility_date = "2024-01-15"
-node_compat = true
 compatibility_flags = ["nodejs_compat"]
 
 [env.production]
