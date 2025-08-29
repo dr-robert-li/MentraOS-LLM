@@ -11,7 +11,7 @@
     "ngrok": "ngrok http --url=mira.ngrok.dev 8040",
     "build": "bun build ./src/index.ts --outdir ./dist --target bun",
     "build:worker": "tsc --project tsconfig.worker.json && bun build ./dist/worker.js --outdir ./dist --target node --format esm --outfile dist/worker.js",
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler deploy --env=\"\"",
     "deploy:dev": "wrangler deploy --env development",
     "deploy:prod": "wrangler deploy --env production",
     "start": "bun src/index.ts",
