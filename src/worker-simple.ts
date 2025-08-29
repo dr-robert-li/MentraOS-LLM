@@ -1,3 +1,6 @@
+// Import and export the SessionManager for Durable Objects
+export { MentraOSSessionManager } from './SessionManager';
+
 // Simplified Cloudflare Workers entry point with minimal dependencies
 export default {
   async fetch(request: Request, env: any, ctx: any): Promise<Response> {
