@@ -29,14 +29,6 @@
     {
       "type": "BACKGROUND_LOCATION",
       "description": "Required to update location context even when the app is running in the background."
-    },
-    {
-      "type": "AUDIO_OUTPUT",
-      "description": "Required to play audio responses and sound effects."
-    },
-    {
-      "type": "DISPLAY",
-      "description": "Required to show text and visual responses on the device screen."
     }
   ],
   "settings": [
@@ -49,11 +41,26 @@
       "key": "llm_provider",
       "label": "LLM Provider",
       "options": [
-        {"label": "OpenAI", "value": "openai"},
-        {"label": "Anthropic", "value": "anthropic"},
-        {"label": "Cohere", "value": "cohere"},
-        {"label": "Perplexity", "value": "perplexity"},
-        {"label": "Custom", "value": "custom"}
+        {
+          "label": "OpenAI",
+          "value": "openai"
+        },
+        {
+          "label": "Anthropic",
+          "value": "anthropic"
+        },
+        {
+          "label": "Cohere",
+          "value": "cohere"
+        },
+        {
+          "label": "Perplexity",
+          "value": "perplexity"
+        },
+        {
+          "label": "Custom",
+          "value": "custom"
+        }
       ],
       "defaultValue": "perplexity"
     },
