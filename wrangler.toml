@@ -1,5 +1,5 @@
 name = "mentraos-llm"
-main = "dist/worker.js"
+main = "dist/worker-simple.js"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
