@@ -16,14 +16,16 @@ RUN apk add --no-cache \
 COPY package*.json ./
 COPY bun.lock* ./
 
-# Install dependencies
-RUN npm install --production
+# Install dependencies (include dev for build, then prune)
+RUN npm install
+RUN npm run build:node
+RUN npm prune --production
 
 # Copy source code
 COPY . .
 
-# Build the TypeScript code
-RUN npm run build:node
+# Build step already executed above
+# RUN npm run build:node
 
 # Expose port (Google Cloud Run uses PORT environment variable)
 EXPOSE 80
