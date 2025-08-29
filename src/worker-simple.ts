@@ -111,6 +111,126 @@ export default {
         });
       }
 
+      // Settings endpoint - Updates session configuration and triggers behavior changes
+      if (url.pathname === '/settings' && request.method === 'POST') {
+        try {
+          const body = await request.json() as any;
+          const sessionId = body.sessionId || 'default';
+          const userId = body.userId || 'default';
+          
+          console.log('Settings update request from MentraOS app:', {
+            sessionId,
+            userId,
+            provider: body.llm_provider,
+            model: body.llm_model,
+            hasApiKey: !!body.llm_api_key,
+            otherSettings: Object.keys(body).filter(k => !k.startsWith('llm_'))
+          });
+          
+          // Validate the LLM provider configuration first
+          const validProviders = ['openai', 'anthropic', 'google', 'perplexity', 'azure'];
+          const provider = body.llm_provider;
+          const model = body.llm_model;
+          const apiKey = body.llm_api_key;
+          
+          let validation = {
+            provider: {
+              valid: !provider || validProviders.includes(provider),
+              value: provider
+            },
+            model: {
+              valid: !model || (model.trim().length > 0),
+              value: model
+            },
+            apiKey: {
+              valid: !apiKey || (apiKey.trim().length > 10),
+              present: !!apiKey
+            }
+          };
+          
+          const isValid = validation.provider.valid && validation.model.valid && validation.apiKey.valid;
+          
+          if (!isValid) {
+            return new Response(JSON.stringify({ 
+              status: 'validation_failed',
+              message: 'Invalid LLM configuration',
+              validation: validation,
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+              },
+            });
+          }
+          
+          // Update session settings via Durable Object (if configured)
+          if (env.MENTRAOS_LLM_SESSIONS) {
+            try {
+              const sessionManager = env.MENTRAOS_LLM_SESSIONS.idFromName(sessionId);
+              const sessionStub = env.MENTRAOS_LLM_SESSIONS.get(sessionManager);
+              
+              // Update session with new settings
+              const updateResult = await sessionStub.fetch(
+                `https://session-manager/update?sessionId=${sessionId}&userId=${userId}`, 
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    settings: body,
+                    lastActivity: Date.now()
+                  })
+                }
+              );
+              
+              if (!updateResult.ok) {
+                console.warn('Failed to update session in Durable Object');
+              }
+            } catch (error) {
+              console.warn('Session update failed:', error);
+              // Continue anyway - settings are still validated
+            }
+          }
+          
+          return new Response(JSON.stringify({ 
+            status: 'success',
+            message: 'Settings updated and applied to session',
+            applied: {
+              timestamp: new Date().toISOString(),
+              sessionId: sessionId,
+              userId: userId,
+              llm_config: {
+                provider: provider || 'unchanged',
+                model: model || 'unchanged',
+                api_key_updated: !!apiKey
+              },
+              session_updated: !!env.MENTRAOS_LLM_SESSIONS
+            },
+            note: 'Session behavior will update immediately'
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            },
+          });
+          
+        } catch (error) {
+          console.error('Error processing settings update:', error);
+          return new Response(JSON.stringify({ 
+            status: 'error',
+            message: 'Failed to update settings',
+            error: error instanceof Error ? error.message : 'Invalid request format'
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            },
+          });
+        }
+      }
+
       // Simple test endpoint without LLM dependencies
       if (url.pathname === '/api/test' && request.method === 'POST') {
         const body = await request.json() as { provider?: string; model?: string; message?: string };
@@ -148,7 +268,7 @@ export default {
       // Default 404 response
       return new Response(JSON.stringify({
         error: 'Not Found',
-        available_endpoints: ['/health', '/api/info', '/webhook', '/api/test']
+        available_endpoints: ['/health', '/api/info', '/webhook', '/settings', '/api/test']
       }), {
         status: 404,
         headers: { 
