@@ -168,9 +168,27 @@ wrangler secret put LOCATIONIQ_TOKEN
 - `OPENAI_API_KEY` - For GPT-4o, GPT-5 models  
 - `ANTHROPIC_API_KEY` - For Claude models
 
+**Environment Variables (Not Encrypted):**
+```bash
+# Set default provider and model configuration
+wrangler secret put LLM_PROVIDER
+# Enter: perplexity
+
+wrangler secret put LLM_MODEL  
+# Enter: sonar
+```
+
+**Or via Cloudflare Dashboard:**
+1. Go to **Workers & Pages** → **mentraos-llm** → **Settings** → **Variables and Secrets**
+2. Click **Add Variable** (NOT encrypted) for:
+   - Variable name: `LLM_PROVIDER`, Value: `perplexity`
+   - Variable name: `LLM_MODEL`, Value: `sonar`
+
 **Verify Setup:**
 ```bash
-curl -X POST https://your-worker.dev/api/test -d '{"message":"test"}'
+curl -X POST https://mentraos-llm.chum-829.workers.dev/api/test \
+  -H "Content-Type: application/json" \
+  -d '{"message":"test"}'
 ```
 
 #### Docker

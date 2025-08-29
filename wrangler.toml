@@ -12,6 +12,8 @@ name = "mira-llm-dev"
 # Add your environment variables here
 [vars]
 NODE_ENV = "production"
+LLM_PROVIDER = "perplexity"
+LLM_MODEL = "sonar"
 
 # For LangChain and other Node.js dependencies
 [build]

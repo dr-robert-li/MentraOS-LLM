@@ -115,14 +115,24 @@ export default {
         return new Response(JSON.stringify({ 
           status: 'success',
           message: 'MentraOS LLM API is ready',
-          echo: {
-            provider: body.provider || 'not specified',
-            model: body.model || 'not specified',
+          request: {
+            provider: body.provider || 'not specified in request',
+            model: body.model || 'not specified in request',
             message: body.message || 'Hello from MentraOS!'
+          },
+          configured: {
+            provider: env.LLM_PROVIDER || 'not configured',
+            model: env.LLM_MODEL || 'not configured'
           },
           environment: {
             timestamp: new Date().toISOString(),
-            provider_configured: !!env.OPENAI_API_KEY || !!env.PERPLEXITY_API_KEY || !!env.ANTHROPIC_API_KEY,
+            api_keys_available: {
+              openai: !!env.OPENAI_API_KEY,
+              perplexity: !!env.PERPLEXITY_API_KEY,
+              anthropic: !!env.ANTHROPIC_API_KEY,
+              google: !!env.GOOGLE_API_KEY,
+              azure: !!env.AZURE_OPENAI_API_KEY
+            }
           }
         }), {
           headers: { 
