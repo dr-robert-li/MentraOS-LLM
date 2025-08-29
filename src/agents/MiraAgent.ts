@@ -13,7 +13,7 @@ import { TpaCommandsTool, TpaListAppsTool } from "./tools/TpaCommandsTool";
 
 import { ThinkingTool } from "./tools/ThinkingTool";
 import { Calculator } from "@langchain/community/tools/calculator";
-import { AppServer, PhotoData, GIVE_APP_CONTROL_OF_TOOL_RESPONSE } from "@mentra/sdk";
+import { AppServer, AppSession, PhotoData, GIVE_APP_CONTROL_OF_TOOL_RESPONSE } from "@mentra/sdk";
 
 
 interface QuestionAnswer {
@@ -77,7 +77,7 @@ export class MiraAgent implements Agent {
     }
   };
 
-  constructor(cloudUrl: string, userId: string) {
+  constructor(cloudUrl: string, userId: string, private session?: AppSession) {
     this.agentTools = [
       new SearchToolForAgents(),
       new TpaListAppsTool(cloudUrl, userId),
@@ -243,34 +243,55 @@ export class MiraAgent implements Agent {
 
       const photoContext = photo ? `The attached photo is what the user can currently see.  It may or may not be relevant to the query.  If it is relevant, use it to answer the query.` : '';
 
-      // Get LLM instance (session-aware if passed in userContext)
-      const llmInstance = userContext.llm ?? LLMProvider.getLLM();
-      if (!llmInstance) {
-        console.error("MiraAgent: No LLM instance available. Check API key configuration.");
-        return "Sorry, I'm having trouble connecting to the AI service. Please check your API key settings and try again.";
-      }
-      if (typeof (llmInstance as any).bindTools !== "function") {
-        console.error("MiraAgent: LLM instance does not support bindTools()");
-        return "Sorry, there's a configuration issue with the AI service. Please contact support.";
+      // Get LLM instance (session-aware if passed in userContext or available via constructor)
+      let llmInstance;
+      try {
+        llmInstance = userContext.llm ?? LLMProvider.getLLM(this.session);
+      } catch (error) {
+        console.error("MiraAgent: Error getting LLM instance:", error);
+        return "There is a configuration issue with the AI, contact support. (LLM Provider initialization error)";
       }
       
+      if (!llmInstance) {
+        console.error("MiraAgent: No LLM instance available. Check API key configuration.");
+        console.error("Current environment - LLM_PROVIDER:", process.env.LLM_PROVIDER);
+        console.error("Current environment - LLM_MODEL:", process.env.LLM_MODEL);
+        console.error("Current environment - PERPLEXITY_API_KEY:", process.env.PERPLEXITY_API_KEY ? 'Present' : 'Missing');
+        return "There is a configuration issue with the AI, contact support. (LLM Provider failed to initialize)";
+      }
       let llm;
-      try {
-        llm = (llmInstance as any).bindTools(this.agentTools);
-      } catch (error) {
-        console.error("MiraAgent: Error binding tools to LLM:", error);
-        return "Sorry, I'm having trouble initializing my tools. Please try again or check your settings.";
+      let supportsTools = false;
+      
+      if (typeof (llmInstance as any).bindTools === "function") {
+        try {
+          llm = (llmInstance as any).bindTools(this.agentTools);
+          supportsTools = true;
+        } catch (error) {
+          console.warn("MiraAgent: Error binding tools to LLM, falling back to non-tool mode:", error);
+          llm = llmInstance;
+          supportsTools = false;
+        }
+      } else {
+        console.warn("MiraAgent: LLM instance does not support bindTools(), running in non-tool mode");
+        llm = llmInstance;
+        supportsTools = false;
       }
 
-      const toolNames = this.agentTools.map((tool) => {
-        const name = tool?.name ?? "Unnamed Tool";
-        const description = tool?.description ?? "";
-        return `${name}: ${description}`;
-      });
+      let toolsSection = '';
+      if (supportsTools) {
+        const toolNames = this.agentTools.map((tool) => {
+          const name = tool?.name ?? "Unnamed Tool";
+          const description = tool?.description ?? "";
+          return `${name}: ${description}`;
+        });
+        toolsSection = toolNames.join("\n");
+      } else {
+        toolsSection = "Note: Advanced tools are not available in this mode. Answer based on your knowledge and provided context.";
+      }
 
       // Replace the {tool_names} placeholder with actual tool names and descriptions
       const systemPrompt = systemPromptBlueprint
-        .replace("{tool_names}", toolNames.join("\n"))
+        .replace("{tool_names}", toolsSection)
         .replace("{location_context}", locationInfo)
         .replace("{notifications_context}", notificationsContext)
         .replace("{timezone_context}", localtimeContext)

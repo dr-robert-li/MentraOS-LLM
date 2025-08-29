@@ -1,52 +1,99 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: mentra-os-llm
+  name: mentraos-llm
+  namespace: '410741782200'
+  labels:
+    cloud.googleapis.com/location: us-central1
   annotations:
     run.googleapis.com/ingress: all
+    run.googleapis.com/invoker-iam-disabled: 'true'
 spec:
   template:
     metadata:
       annotations:
-        run.googleapis.com/cpu-throttling: "false"
+        # Performance optimizations
+        autoscaling.knative.dev/maxScale: '10'
+        autoscaling.knative.dev/minScale: '1'
+        run.googleapis.com/cpu-throttling: 'false'
         run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/startup-cpu-boost: 'true'
+        run.googleapis.com/sessionAffinity: 'true'
+        run.googleapis.com/client-name: cloud-console
     spec:
-      containerConcurrency: 100
+      # Reduce concurrency for better per-request performance
+      containerConcurrency: 10
+      # Increase timeout for LLM operations
       timeoutSeconds: 300
+      serviceAccountName: 410741782200-compute@developer.gserviceaccount.com
       containers:
-      - image: gcr.io/PROJECT_ID/mentra-os-llm
+      - name: mentraos-llm
+        image: us-central1-docker.pkg.dev/mentraos-llm/cloud-run-source-deploy/mentraos-llm/mentraos-llm:07a5a9dae1a68d1a218b8192c4a8b83bbaa3cc22
         ports:
-        - containerPort: 80
+        - name: http1
+          containerPort: 8080
         env:
-        - name: PORT
-          value: "80"
-        - name: PACKAGE_NAME
-          value: "MentraOS-LLM"
         - name: LLM_PROVIDER
-          value: "perplexity"
+          value: perplexity
         - name: LLM_MODEL
-          value: "sonar"
-        # Add your API keys here as environment variables
-        # Replace YOUR_ACTUAL_KEY with your real API keys
-        - name: AUGMENTOS_API_KEY
-          value: "YOUR_AUGMENTOS_API_KEY"
+          value: sonar
+        - name: PACKAGE_NAME
+          value: dr-robert-li-au.mentraos.mentraos-llm
         - name: PERPLEXITY_API_KEY
-          value: "YOUR_PERPLEXITY_API_KEY"
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: PERPLEXITY_API_KEY
         - name: OPENAI_API_KEY
-          value: "YOUR_OPENAI_API_KEY"
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: OPENAI_API_KEY
         - name: ANTHROPIC_API_KEY
-          value: "YOUR_ANTHROPIC_API_KEY"
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: ANTHROPIC_API_KEY
         - name: LOCATIONIQ_TOKEN
-          value: "YOUR_LOCATIONIQ_TOKEN"
-        # Optional: uncomment and add if needed
-        # - name: GOOGLE_API_KEY
-        #   value: "YOUR_GOOGLE_API_KEY"
-        # - name: AZURE_OPENAI_API_KEY
-        #   value: "YOUR_AZURE_API_KEY"
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: LOCATIONIQ_TOKEN
+        - name: AUGMENTOS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: AUGMENTOS_API_KEY
+        # Performance environment variables
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=3584 --max-semi-space-size=128"
+        - name: UV_THREADPOOL_SIZE
+          value: "16"
+        - name: NODE_ENV
+          value: production
         resources:
+        # Aggressive resourcing
           limits:
-            cpu: 1000m
-            memory: 512Mi
+            cpu: 4000m
+            memory: 4Gi
           requests:
-            cpu: 500m
-            memory: 256Mi
+            cpu: 2000m
+            memory: 2Gi
+        startupProbe:
+          timeoutSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 24
+          tcpSocket:
+            port: 8080
+        # Add liveness probe for health monitoring
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+  traffic:
+  - percent: 100
+    latestRevision: true

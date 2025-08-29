@@ -1,0 +1,214 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: mentraos-llm
+  namespace: 'YOUR_PROJECT_NUMBER'  # Replace with your Google Cloud project number
+  labels:
+    cloud.googleapis.com/location: us-central1
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/invoker-iam-disabled: 'true'
+spec:
+  template:
+    metadata:
+      annotations:
+        # Performance optimizations for LLM applications
+        autoscaling.knative.dev/maxScale: '10'
+        autoscaling.knative.dev/minScale: '1'
+        run.googleapis.com/cpu-throttling: 'false'
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/startup-cpu-boost: 'true'
+        run.googleapis.com/sessionAffinity: 'true'
+        run.googleapis.com/client-name: cloud-console
+    spec:
+      # Lower concurrency for better per-request performance with LLMs
+      containerConcurrency: 10
+      # Increased timeout for complex LLM operations
+      timeoutSeconds: 300
+      serviceAccountName: YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com
+      containers:
+      - name: mentraos-llm
+        # Update with your actual image path
+        image: us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cloud-run-source-deploy/mentraos-llm/mentraos-llm:YOUR_COMMIT_SHA
+        ports:
+        - name: http1
+          containerPort: 8080
+        env:
+        # App Configuration
+        - name: PORT
+          value: "8080"
+        - name: PACKAGE_NAME
+          value: "your-package-name-from-mentra-dev-portal"  # Replace with your actual package name
+        - name: NODE_ENV
+          value: "production"
+        
+        # LLM Configuration
+        - name: LLM_PROVIDER
+          value: "perplexity"  # Options: openai, anthropic, perplexity, cohere, custom
+        - name: LLM_MODEL
+          value: "sonar"
+        
+        # Performance Environment Variables
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=3584 --max-semi-space-size=128"
+        - name: UV_THREADPOOL_SIZE
+          value: "16"
+        
+        # SECURITY BEST PRACTICE: Use Google Secret Manager instead of plain text values
+        # Create secrets in Google Cloud Console -> Secret Manager
+        
+        # Method 1: Using Secret Manager (RECOMMENDED)
+        - name: AUGMENTOS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: AUGMENTOS_API_KEY
+        - name: PERPLEXITY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: PERPLEXITY_API_KEY
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: OPENAI_API_KEY
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: ANTHROPIC_API_KEY
+        - name: LOCATIONIQ_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: LOCATIONIQ_TOKEN
+        # Optional: Jina AI for web search
+        - name: JINA_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: JINA_API_KEY
+        
+        # Method 2: Plain text values (NOT RECOMMENDED for production)
+        # Only use for local development/testing
+        # - name: AUGMENTOS_API_KEY
+        #   value: "YOUR_AUGMENTOS_API_KEY"
+        # - name: PERPLEXITY_API_KEY
+        #   value: "YOUR_PERPLEXITY_API_KEY"
+        # - name: OPENAI_API_KEY
+        #   value: "YOUR_OPENAI_API_KEY"
+        # - name: ANTHROPIC_API_KEY
+        #   value: "YOUR_ANTHROPIC_API_KEY"
+        # - name: LOCATIONIQ_TOKEN
+        #   value: "YOUR_LOCATIONIQ_TOKEN"
+        
+        # Optional providers (uncomment if needed)
+        # - name: GOOGLE_API_KEY
+        #   valueFrom:
+        #     secretKeyRef:
+        #       key: '1'
+        #       name: GOOGLE_API_KEY
+        # - name: AZURE_OPENAI_API_KEY
+        #   valueFrom:
+        #     secretKeyRef:
+        #       key: '1'
+        #       name: AZURE_OPENAI_API_KEY
+        # - name: COHERE_API_KEY
+        #   valueFrom:
+        #     secretKeyRef:
+        #       key: '1'
+        #       name: COHERE_API_KEY
+        
+        resources:
+          limits:
+            # OPTIMIZED: High-performance configuration for LLM operations
+            cpu: 4000m      # 4 vCPUs - handles concurrent AI operations
+            memory: 4Gi     # 4 GB RAM - prevents memory pressure
+          requests:
+            cpu: 2000m      # 2 vCPUs minimum - ensures consistent performance
+            memory: 2Gi     # 2 GB RAM minimum - baseline for Node.js + LLMs
+        
+        # Health checks optimized for LLM startup times
+        startupProbe:
+          timeoutSeconds: 240
+          periodSeconds: 10
+          failureThreshold: 24
+          tcpSocket:
+            port: 8080
+        
+        # Continuous health monitoring
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+          
+  traffic:
+  - percent: 100
+    latestRevision: true
+
+# ==========================================
+# CONFIGURATION INSTRUCTIONS
+# ==========================================
+#
+# 1. REPLACE PLACEHOLDERS:
+#    - YOUR_PROJECT_NUMBER: Your Google Cloud project number (e.g., 410741782200)
+#    - YOUR_PROJECT_ID: Your Google Cloud project ID (e.g., mentraos-llm)
+#    - YOUR_COMMIT_SHA: The commit SHA of your deployed Docker image
+#    - your-package-name-from-mentra-dev-portal: Your app's package name from MentraOS developer portal
+#
+# 2. RESOURCE RECOMMENDATIONS:
+#    - Development/Testing: 2000m CPU, 2Gi RAM
+#    - Production (Moderate): 4000m CPU, 4Gi RAM
+#    - Production (Heavy): 8000m CPU, 8Gi RAM
+#    - Cost vs Performance: Higher resources = faster responses but higher cost
+#
+# 3. SECURITY - API KEY MANAGEMENT:
+#    Create secrets in Google Cloud Console:
+#    gcloud secrets create AUGMENTOS_API_KEY --data-file=-
+#    gcloud secrets create PERPLEXITY_API_KEY --data-file=-
+#    # etc. for each API key
+#
+# 4. PERFORMANCE TUNING:
+#    - containerConcurrency: 10 = better per-request performance for LLMs
+#    - maxScale: 10 = handles up to 100 concurrent requests (10 containers × 10 concurrency)
+#    - cpu-throttling: false = consistent performance under load
+#    - execution-environment: gen2 = faster startup times and better performance
+#    - sessionAffinity: true = improves cache hit rates
+#
+# 5. LLM PROVIDER OPTIONS:
+#    - openai: GPT-3.5/4, requires OPENAI_API_KEY
+#    - anthropic: Claude, requires ANTHROPIC_API_KEY
+#    - perplexity: Sonar models, requires PERPLEXITY_API_KEY
+#    - cohere: Command models, requires COHERE_API_KEY
+#    - custom: Custom endpoint configuration
+#
+# 6. DEPLOYMENT COMMANDS:
+#    # Apply configuration:
+#    kubectl apply -f cloudrun.yaml
+#    
+#    # Or using gcloud CLI:
+#    gcloud run services replace cloudrun.yaml --region=us-central1
+#    
+#    # Monitor deployment:
+#    gcloud run services describe mentraos-llm --region=us-central1
+#
+# 7. MONITORING & DEBUGGING:
+#    # View logs:
+#    gcloud logs read "resource.type=cloud_run_revision" --limit=50
+#    
+#    # Monitor performance:
+#    gcloud run services list
+#    
+#    # Check service status:
+#    curl https://your-service-url.run.app/
+#
+# 8. TROUBLESHOOTING:
+#    - "No query provided" errors: Check wake word removal logic and transcription
+#    - Slow responses: Increase CPU/memory resources
+#    - API key errors: Verify secrets are created and accessible
+#    - Container startup fails: Check environment variables and image path

@@ -243,15 +243,15 @@ class TranscriptionManager {
             this.handleLocation(location);
           }
         }, error => {
-          console.warn(`[Session ${this.sessionId}]: Error getting location:`, error);
+          this.session.logger.warn('Error getting location:', error);
         });
       } catch (error) {
-        console.warn(`[Session ${this.sessionId}]: Error getting location:`, error);
+        this.session.logger.warn('Error getting location:', error);
       }
 
       // Start 15-second maximum listening timer
       this.maxListeningTimeoutId = setTimeout(() => {
-        console.log(`[Session ${this.sessionId}]: Maximum listening time (15s) reached, forcing query processing`);
+        this.session.logger.info('Maximum listening time (15s) reached, forcing query processing');
         if (this.timeoutId) {
           clearTimeout(this.timeoutId);
           this.timeoutId = undefined;
@@ -449,10 +449,10 @@ class TranscriptionManager {
             locationInfo.country = address.country || 'Unknown country';
           }
         } else {
-          console.warn(`LocationIQ reverse geocoding failed with status: ${response.status}`);
+          logger.warn(`LocationIQ reverse geocoding failed with status: ${response.status}`);
         }
       } catch (geocodingError) {
-        console.warn('Reverse geocoding failed:', geocodingError);
+        logger.warn('Reverse geocoding failed:', geocodingError);
       }
 
       try {
@@ -474,10 +474,10 @@ class TranscriptionManager {
             };
           }
         } else {
-          console.warn(`LocationIQ timezone API failed with status: ${timezoneResponse.status}`);
+          logger.warn(`LocationIQ timezone API failed with status: ${timezoneResponse.status}`);
         }
       } catch (timezoneError) {
-        console.warn('Timezone lookup failed:', timezoneError);
+        logger.warn('Timezone lookup failed:', timezoneError);
       }
 
       // Update the MiraAgent with location context (partial or complete)
@@ -826,7 +826,7 @@ class MiraServer extends AppServer {
     logger.info(`Setting up Mira service for session ${sessionId}, user ${userId}`);
 
     const cleanServerUrl = getCleanServerUrl(session.getServerUrl());
-    const agent = new MiraAgent(cleanServerUrl, userId);
+    const agent = new MiraAgent(cleanServerUrl, userId, session);
     // Start fetching tools asynchronously without blocking
     getAllToolsForUser(cleanServerUrl, userId).then(tools => {
       // Append tools to agent when they're available
@@ -907,8 +907,19 @@ class MiraServer extends AppServer {
 
     // Also listen for setting changes to update subscription strategy dynamically
     session.settings.onChange((settings) => {
-      const manager = this.transcriptionManagers.get(sessionId);
-      manager?.initTranscriptionSubscription();
+      try {
+        const manager = this.transcriptionManagers.get(sessionId);
+        if (manager) {
+          // Reinitialize transcription subscription with new settings
+          manager.initTranscriptionSubscription();
+          
+          // Log settings change for debugging
+          session.logger.info('Settings changed, reinitializing transcription subscription');
+        }
+      } catch (error) {
+        session.logger.error(error, 'Error handling settings change');
+        // Don't crash - just log the error and continue
+      }
     });
     /*
     session.events.onLocation((locationData) => {
@@ -1006,12 +1017,25 @@ class MiraServer extends AppServer {
       return 'Search functionality not available';
     }
     
-    const result = await searchTool.invoke({
-      searchKeyword: parameters.query,
-      location: parameters.location || undefined
-    });
-    
-    return typeof result === 'string' ? result : JSON.stringify(result);
+    try {
+      // Add timeout for search operations
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Search timeout')), 10000)
+      );
+      
+      const result = await Promise.race([
+        searchTool.invoke({
+          searchKeyword: parameters.query,
+          location: parameters.location || undefined
+        }),
+        timeoutPromise
+      ]);
+      
+      return typeof result === 'string' ? result : JSON.stringify(result);
+    } catch (error) {
+      logger.error(error, 'Search operation failed:');
+      return `Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
   }
 
   private async handleListApps(parameters: any, agent: MiraAgent, userId: string): Promise<string> {
@@ -1056,8 +1080,16 @@ class MiraServer extends AppServer {
 
   private async handleNewsAPI(parameters: any, userId: string): Promise<string> {
     try {
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('News fetch timeout')), 15000)
+      );
+      
       const newsAgent = new NewsAgent();
-      const result = await newsAgent.handleContext({});
+      const result = await Promise.race([
+        newsAgent.handleContext({}),
+        timeoutPromise
+      ]);
       
       if (result && result.news_summaries && Array.isArray(result.news_summaries)) {
         if (result.news_summaries.length === 0) {
@@ -1130,7 +1162,8 @@ const server = new MiraServer({
   apiKey: AUGMENTOS_API_KEY!,
   port: PORT,
   webhookPath: '/webhook',
-  publicDir: path.join(__dirname, './public')
+  publicDir: path.join(__dirname, './public'),
+  healthCheck: true // Enable built-in health check endpoint
 });
 
 server.start()

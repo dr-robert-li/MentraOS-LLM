@@ -55,10 +55,15 @@ import { AppSession } from "@mentra/sdk";
 export class LLMProvider {
   static getLLM(session?: AppSession) {
     try {
-      // Read from MentraOS settings if available, otherwise fallback to env
-      const provider = session?.settings.get<string>("llm_provider", process.env.LLM_PROVIDER || LLMService.PERPLEXITY) as LLMService;
-      const model = session?.settings.get<string>("llm_model", process.env.LLM_MODEL || LLMModel.SONAR) as LLMModel;
-      const apiKeyFromSettings = session?.settings.get<string>("llm_api_key", "");
+      // Priority order: User settings > Environment variables > Defaults
+      const provider = LLMProvider.getSettingWithFallback(session, "llm_provider", process.env.LLM_PROVIDER, LLMService.PERPLEXITY) as LLMService;
+      const model = LLMProvider.getSettingWithFallback(session, "llm_model", process.env.LLM_MODEL, LLMModel.SONAR) as LLMModel;
+      
+      // Log the source of configuration for debugging
+      if (session) {
+        console.log(`LLMProvider: Using provider='${provider}' from ${LLMProvider.getSettingSource(session, "llm_provider", process.env.LLM_PROVIDER)}`);
+        console.log(`LLMProvider: Using model='${model}' from ${LLMProvider.getSettingSource(session, "llm_model", process.env.LLM_MODEL)}`);
+      }
 
       // Validate provider and model before proceeding
       if (!provider || !model) {
@@ -98,87 +103,117 @@ export class LLMProvider {
           console.warn(`Unsupported Azure model: ${model}, falling back to default`);
           return LLMProvider.createDefaultLLM();
         }
-        const apiKey = apiKeyFromSettings || AZURE_OPENAI_API_KEY;
+        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", AZURE_OPENAI_API_KEY, "Azure OpenAI");
         if (!apiKey) {
           console.warn("Azure API key missing, falling back to default LLM");
           return LLMProvider.createDefaultLLM();
         }
-        return new AzureChatOpenAI({
-          modelName: model,
-          temperature: 0.3,
-          maxTokens: 300,
-          azureOpenAIApiKey: apiKey,
-          azureOpenAIApiVersion: AZURE_OPENAI_API_VERSION,
-          azureOpenAIApiInstanceName: AZURE_OPENAI_API_INSTANCE_NAME,
-          azureOpenAIApiDeploymentName: AZURE_OPENAI_API_DEPLOYMENT_NAME,
-        });
+        try {
+          return new AzureChatOpenAI({
+            modelName: model,
+            temperature: 0.3,
+            maxTokens: 300,
+            azureOpenAIApiKey: apiKey,
+            azureOpenAIApiVersion: AZURE_OPENAI_API_VERSION,
+            azureOpenAIApiInstanceName: AZURE_OPENAI_API_INSTANCE_NAME,
+            azureOpenAIApiDeploymentName: AZURE_OPENAI_API_DEPLOYMENT_NAME,
+          });
+        } catch (error) {
+          console.error("Failed to create Azure OpenAI instance:", error);
+          console.warn("Falling back to default LLM due to Azure initialization error");
+          return LLMProvider.createDefaultLLM();
+        }
       } else if (provider === LLMService.OPENAI) {
         if (!supportedOpenAIModels.includes(model as LLMModel)) {
           console.warn(`Unsupported OpenAI model: ${model}, falling back to default`);
           return LLMProvider.createDefaultLLM();
         }
-        const apiKey = apiKeyFromSettings || OPENAI_API_KEY;
+        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", OPENAI_API_KEY, "OpenAI");
         if (!apiKey) {
           console.warn("OpenAI API key missing, falling back to default LLM");
           return LLMProvider.createDefaultLLM();
         }
-        return new ChatOpenAI({
-          modelName: model,
-          temperature: 0.3,
-          maxTokens: 300,
-          openAIApiKey: apiKey,
-        });
+        try {
+          return new ChatOpenAI({
+            modelName: model,
+            temperature: 0.3,
+            maxTokens: 300,
+            openAIApiKey: apiKey,
+          });
+        } catch (error) {
+          console.error("Failed to create OpenAI instance:", error);
+          console.warn("Falling back to default LLM due to OpenAI initialization error");
+          return LLMProvider.createDefaultLLM();
+        }
       } else if (provider === LLMService.ANTHROPIC) {
         if (!supportedAnthropicModels.includes(model as LLMModel)) {
           console.warn(`Unsupported Anthropic model: ${model}, falling back to default`);
           return LLMProvider.createDefaultLLM();
         }
-        const apiKey = apiKeyFromSettings || ANTHROPIC_API_KEY;
+        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", ANTHROPIC_API_KEY, "Anthropic");
         if (!apiKey) {
           console.warn("Anthropic API key missing, falling back to default LLM");
           return LLMProvider.createDefaultLLM();
         }
-        return new ChatAnthropic({
-          modelName: model,
-          temperature: 0.3,
-          maxTokens: 300,
-          anthropicApiKey: apiKey,
-        });
+        try {
+          return new ChatAnthropic({
+            modelName: model,
+            temperature: 0.3,
+            maxTokens: 300,
+            anthropicApiKey: apiKey,
+          });
+        } catch (error) {
+          console.error("Failed to create Anthropic instance:", error);
+          console.warn("Falling back to default LLM due to Anthropic initialization error");
+          return LLMProvider.createDefaultLLM();
+        }
       } else if (provider === LLMService.GOOGLE) {
         if (!supportedGoogleModels.includes(model as LLMModel)) {
           console.warn(`Unsupported Google model: ${model}, falling back to default`);
           return LLMProvider.createDefaultLLM();
         }
-        const apiKey = apiKeyFromSettings || GOOGLE_API_KEY;
+        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", GOOGLE_API_KEY, "Google");
         if (!apiKey) {
           console.warn("Google API key missing, falling back to default LLM");
           return LLMProvider.createDefaultLLM();
         }
-        return new ChatVertexAI({
-          model: model,
-          temperature: 0.3,
-          maxOutputTokens: 300,
-          authOptions: {
-            credentials: { private_key: apiKey },
-          },
-          location: GOOGLE_LOCATION,
-        });
+        try {
+          return new ChatVertexAI({
+            model: model,
+            temperature: 0.3,
+            maxOutputTokens: 300,
+            authOptions: {
+              credentials: { private_key: apiKey },
+            },
+            location: GOOGLE_LOCATION,
+          });
+        } catch (error) {
+          console.error("Failed to create Google Vertex AI instance:", error);
+          console.warn("Falling back to default LLM due to Google initialization error");
+          return LLMProvider.createDefaultLLM();
+        }
       } else if (provider === LLMService.PERPLEXITY) {
         if (!supportedPerplexityModels.includes(model as LLMModel)) {
           console.warn(`Unsupported Perplexity model: ${model}, falling back to default`);
           return LLMProvider.createDefaultLLM();
         }
-        const apiKey = apiKeyFromSettings || PERPLEXITY_API_KEY;
+        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", PERPLEXITY_API_KEY, "Perplexity");
         if (!apiKey) {
           console.warn("Perplexity API key missing, falling back to default LLM");
           return LLMProvider.createDefaultLLM();
         }
-        return new ChatPerplexity({
-          model: model,
-          temperature: 0.3,
-          maxTokens: 300,
-          apiKey: apiKey,
-        });
+        try {
+          return new ChatPerplexity({
+            model: model,
+            temperature: 0.3,
+            maxTokens: 300,
+            apiKey: apiKey,
+          });
+        } catch (error) {
+          console.error("Failed to create Perplexity instance:", error);
+          console.warn("Falling back to default LLM due to Perplexity initialization error");
+          return LLMProvider.createDefaultLLM();
+        }
       } else {
         console.warn(`Unsupported LLM provider: ${provider}, falling back to default`);
         return LLMProvider.createDefaultLLM();
@@ -229,11 +264,112 @@ export class LLMProvider {
       }
 
       // If no environment keys available, throw error
-      throw new Error("No valid LLM provider configuration found");
+      throw new Error("No valid LLM provider configuration found. Please check your API keys in environment variables or Google Secret Manager.");
     } catch (error) {
       console.error("Failed to create default LLM:", error);
+      console.error("Available environment variables:");
+      console.error(`PERPLEXITY_API_KEY: ${PERPLEXITY_API_KEY ? 'Present (length: ' + PERPLEXITY_API_KEY.length + ')' : 'Missing'}`);
+      console.error(`OPENAI_API_KEY: ${OPENAI_API_KEY ? 'Present (length: ' + OPENAI_API_KEY.length + ')' : 'Missing'}`);
+      console.error(`ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY ? 'Present (length: ' + ANTHROPIC_API_KEY.length + ')' : 'Missing'}`);
+      
       // Return a mock LLM that prevents crashes but logs the issue
       return null; // This will be caught by the null checks in MiraAgent
+    }
+  }
+
+  /**
+   * Resolves a setting with proper fallback priority:
+   * 1. User settings (if session available)
+   * 2. Environment variable
+   * 3. Default value
+   */
+  private static getSettingWithFallback<T>(session: AppSession | undefined, settingKey: string, envValue: string | undefined, defaultValue: T): T {
+    if (session) {
+      try {
+        // Check if user has explicitly set this setting (non-empty value)
+        const userSetting = session.settings.get<T>(settingKey);
+        if (userSetting !== undefined && userSetting !== null) {
+          // For string settings, also check if not empty
+          if (typeof userSetting === 'string' && userSetting.trim() === '') {
+            // Empty string, use fallback
+          } else {
+            return userSetting;
+          }
+        }
+      } catch (error) {
+        console.warn(`Error reading setting '${settingKey}':`, error);
+        // Continue to fallback
+      }
+    }
+
+    // Fallback to environment variable, then default
+    return (envValue as T) || defaultValue;
+  }
+
+  /**
+   * Determines the source of a setting value for logging
+   */
+  private static getSettingSource(session: AppSession | undefined, settingKey: string, envValue: string | undefined): string {
+    if (session) {
+      try {
+        const userSetting = session.settings.get<string>(settingKey);
+        if (userSetting && userSetting.trim()) {
+          return "user settings";
+        }
+      } catch (error) {
+        console.warn(`Error reading setting source for '${settingKey}':`, error);
+      }
+    }
+
+    if (envValue) {
+      return "environment variables";
+    }
+
+    return "defaults";
+  }
+
+  /**
+   * Resolves API key with proper priority and validation
+   * Priority: User settings > Environment secrets > Empty (fallback to default LLM)
+   */
+  private static resolveApiKey(session: AppSession | undefined, settingKey: string, envApiKey: string, providerName: string): string | null {
+    let apiKey: string = "";
+    let source: string = "";
+
+    // 1. Check user settings first (highest priority)
+    if (session) {
+      try {
+        const userApiKey = session.settings.get<string>(settingKey, "");
+        if (userApiKey && userApiKey.trim()) {
+          apiKey = userApiKey.trim();
+          source = "user settings";
+        }
+      } catch (error) {
+        console.warn(`Error reading API key from settings for '${settingKey}':`, error);
+        // Continue to environment fallback
+      }
+    }
+
+    // 2. Fallback to environment secrets
+    if (!apiKey && envApiKey) {
+      apiKey = envApiKey;
+      source = "environment secrets";
+    }
+
+    // Log API key source for debugging (without exposing the key)
+    if (apiKey) {
+      console.log(`LLMProvider: Using ${providerName} API key from ${source} (length: ${apiKey.length})`);
+      
+      // Basic validation - ensure it's not a placeholder
+      if (apiKey.includes("YOUR_") || apiKey.includes("PLACEHOLDER")) {
+        console.warn(`LLMProvider: ${providerName} API key appears to be a placeholder value`);
+        return null;
+      }
+
+      return apiKey;
+    } else {
+      console.warn(`LLMProvider: No ${providerName} API key found in settings or environment`);
+      return null;
     }
   }
 }

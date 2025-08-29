@@ -147,6 +147,9 @@ docker-compose.override.yml
 .dev.vars
 wrangler.toml.bak
 
+# GCR Config
+cloudrun.yaml
+
 # IDE and Editor files
 .vscode/
 .idea/
@@ -180,3 +183,6 @@ bun.lockb
 
 #IDE Tools
 .claude/
+
+# Documentation
+docs/

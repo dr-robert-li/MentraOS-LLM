@@ -1,6 +1,9 @@
-# MentraOS LLM
+# MentraOS LLM 
+### Version: 0.4
 
 AI-powered virtual assistant for Mentra smart glasses, deployable to Google Cloud Run and other Node.js platforms.
+
+**Author:** Dr. Robert Li
 
 ## Features
 
@@ -267,6 +270,52 @@ Common issues:
 - Missing API keys → Check environment variables
 - Memory exceeded → Increase Cloud Run memory allocation
 - Cold starts → Consider minimum instances for production
+
+#### "Configuration issue with the AI, contact support" Error
+
+This error indicates the LLM provider failed to initialize. Check the following:
+
+1. **Verify API Keys in Google Secret Manager**:
+   ```bash
+   # List available secrets
+   gcloud secrets list
+   
+   # Check if specific secret exists and has data
+   gcloud secrets versions access latest --secret="PERPLEXITY_API_KEY"
+   ```
+
+2. **Check Cloud Run Service Account Permissions**:
+   - Ensure the service account has "Secret Manager Secret Accessor" role
+   - Default service account: `PROJECT_NUMBER-compute@developer.gserviceaccount.com`
+
+3. **Validate Secret Configuration in cloudrun.yaml**:
+   ```yaml
+   - name: PERPLEXITY_API_KEY
+     valueFrom:
+       secretKeyRef:
+         key: '1'  # or 'latest'
+         name: PERPLEXITY_API_KEY
+   ```
+
+4. **Check Cloud Run Logs** for detailed error information:
+   ```bash
+   gcloud logs read "resource.type=cloud_run_revision" --limit=50 --format="value(textPayload)"
+   ```
+
+5. **Test API Key Validity** locally:
+   ```bash
+   curl -X POST "https://api.perplexity.ai/chat/completions" \
+     -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"model": "sonar", "messages": [{"role": "user", "content": "test"}]}'
+   ```
+
+#### "No query provided" Error
+
+This error occurs when wake word removal results in empty text:
+- Check transcription quality and accuracy
+- Verify wake word variations are properly configured
+- Review audio quality from smart glasses
 
 ## Security
 

@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4] - 2025-08-29
+### Fixed
+- **CRITICAL**: Fixed app crashes during MentraOS settings updates in Android app
+- **CRITICAL**: Resolved LLM provider initialization failures with invalid API keys
+- **CRITICAL**: Fixed "configuration issue with AI" error for Perplexity LLM (non-tool mode support)
+- **CRITICAL**: Fixed Cloud Run health check failures causing container shutdowns
+
+### Changed
+- **Settings System**: Implemented proper priority resolution (User Settings > Environment Variables > Defaults)
+- **API Key Handling**: Enhanced security with validation and source logging
+- **Error Handling**: Added comprehensive error recovery throughout LLM provider system
+- **Health Checks**: Replaced custom HTTP endpoint with SDK built-in `healthCheck: true`
+- **Logging**: Updated from `console.log` to proper `session.logger` for structured logging
+
+### Added
+- **Session-aware LLM Provider**: Pass user settings context to LLM initialization
+- **Real-time Settings Sync**: Safe handling of settings changes without crashes  
+- **API Key Validation**: Detect placeholder keys and invalid formats
+- **Graceful Degradation**: Fallback to default LLM when user settings fail
+- **Non-tool Mode**: Support for LLMs that don't support function calling (e.g., Perplexity)
+
+### Technical Details
+- Fixed type safety issues in settings resolution that could cause runtime crashes
+- Added try-catch protection around all LLM provider instantiations
+- Enhanced settings change listeners with proper error handling
+- Improved MiraAgent to accept optional session context for settings access
+- Added comprehensive logging for API key resolution without exposing sensitive data
+
+### Author
+- Dr. Robert Li
+
 ## [0.3] - 2025-08-29
 ### Changed
 - **BREAKING CHANGE**: Migrated from Cloudflare Workers to Node.js/Google Cloud Run deployment
