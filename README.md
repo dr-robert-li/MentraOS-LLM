@@ -58,6 +58,14 @@ bun install
 # or
 npm install
 
+# Copy configuration templates and customize them
+cp cloudrun.yaml.example cloudrun.yaml
+cp app-config.example.json your-developer-id.mentraos.app-name_config.json
+
+# Edit both files with your specific values:
+# - cloudrun.yaml: Google Cloud project details, container images  
+# - *_config.json: App name, publicUrl, permissions, tools
+
 # Start development server
 npm run dev
 # or

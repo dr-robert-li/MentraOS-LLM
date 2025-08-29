@@ -150,6 +150,9 @@ wrangler.toml.bak
 # GCR Config
 cloudrun.yaml
 
+# MentraOS App Config (user-specific)
+*_config.json
+
 # IDE and Editor files
 .vscode/
 .idea/
