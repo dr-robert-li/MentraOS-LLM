@@ -54,8 +54,5 @@
     "pinyin-pro": "^3.26.0",
     "uuid": "^11.1.0",
     "ws": "^8.18.1"
-  },
-  "devDependencies": {
-    "typescript": "^5.9.2"
   }
 }
