@@ -31,10 +31,6 @@
       "description": "Required to update location context even when the app is running in the background."
     },
     {
-      "type": "CAMERA",
-      "description": "Required to capture photos for visual context in queries."
-    },
-    {
       "type": "AUDIO_OUTPUT",
       "description": "Required to play audio responses and sound effects."
     },
