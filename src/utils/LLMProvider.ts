@@ -22,6 +22,7 @@ export enum LLMModel {
   GPT4 = 'gpt-4o',
   GPT4_MINI = 'gpt-4o-mini',
   GPT5 = 'gpt-5',
+  GPT5_MINI = 'gpt-5-mini',
   
   // Anthropic Models
   CLAUDE_3 = 'claude-3-5-sonnet-20241022',
@@ -55,11 +56,13 @@ export class LLMProvider {
       LLMModel.GPT4,
       LLMModel.GPT4_MINI,
       LLMModel.GPT5,
+      LLMModel.GPT5_MINI,
     ]
     const supportedOpenAIModels = [
       LLMModel.GPT4,
       LLMModel.GPT4_MINI,
       LLMModel.GPT5,
+      LLMModel.GPT5_MINI,
     ]
     const supportedAnthropicModels = [
       LLMModel.CLAUDE_3,
