@@ -38,16 +38,14 @@ declare global {
     newUniqueId(): DurableObjectId;
     idFromName(name: string): DurableObjectId;
     idFromString(id: string): DurableObjectId;
-    get(id: DurableObjectId): DurableObjectStub;
+    get(id: DurableObjectId): any;
   }
   
   interface DurableObjectId {
     toString(): string;
   }
   
-  interface DurableObjectStub {
-    fetch(input: string | URL | Request, init?: RequestInit): Promise<Response>;
-  }
+  
 }
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 80;
