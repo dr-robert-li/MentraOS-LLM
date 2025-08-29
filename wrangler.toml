@@ -19,11 +19,14 @@ LLM_MODEL = "sonar"
 [build]
 command = "npm run build:worker"
 
-# KV namespace for session persistence - run: npx wrangler kv namespace create mentraos-llm
-# Then replace <GENERATED_NAMESPACE_ID> with the actual ID from the command output
-kv_namespaces = [
-  { binding = "MENTRAOS_LLM", id = "<GENERATED_NAMESPACE_ID>" }
-]
+# KV namespace for session persistence
+# Note: For production deployment, you'll need to set these IDs via:
+# wrangler secret put MENTRAOS_LLM_KV_ID
+# Or use the dashboard to configure KV bindings
+[[kv_namespaces]]
+binding = "MENTRAOS_LLM"
+id = "f32ef2dce1764334adef836a586b07ae"  # This will need to be configured for production
+preview_id = "5b6184536ae44c0499edec3be25794e8"
 
 # Durable Objects for session management with SQLite backend (FREE storage)
 [durable_objects]
