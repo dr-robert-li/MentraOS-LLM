@@ -148,8 +148,13 @@ export class AgentGatekeeper {
       agent_list: agentListString,
     });
 
-    // Initialize the LLM using LangChain’s LLMProvider.
+    // Initialize the LLM using LangChain's LLMProvider.
     const llm = LLMProvider.getLLM();
+    
+    if (!llm) {
+      console.error("Failed to initialize LLM provider");
+      return [];
+    }
 
     try {
       // Invoke the LLM.

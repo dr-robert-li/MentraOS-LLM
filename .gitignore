@@ -176,3 +176,6 @@ coverage/
 
 # Bun specific
 bun.lockb
+
+#IDE Tools
+.claude/

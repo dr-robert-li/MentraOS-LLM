@@ -27,7 +27,7 @@ const TpaListAppsInputSchema = z.object({
   includeRunning: z.boolean().optional().describe("Whether to include running status in the response")
 });
 
-export class TpaListAppsTool extends StructuredTool {
+export class TpaListAppsTool extends StructuredTool<any> {
   name = 'TPA_ListApps';
   description = 'List all available apps with their package names, names, descriptions, and running status. Use this tool when you need to find the correct package name for an app before using TPA_Commands.';
   schema = TpaListAppsInputSchema;
@@ -116,7 +116,7 @@ export class TpaListAppsTool extends StructuredTool {
   }
 }
 
-export class TpaCommandsTool extends StructuredTool {
+export class TpaCommandsTool extends StructuredTool<any> {
   name = 'TPA_Commands';
   description = 'Start or stop apps on smart glasses by providing the exact package name. Use this tool when you know the exact package name of the app to start or stop.';
   schema = TpaCommandsInputSchema;

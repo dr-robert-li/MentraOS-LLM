@@ -1,6 +1,6 @@
-import { DynamicStructuredTool, DynamicTool, StructuredTool, tool, Tool } from '@langchain/core/tools';
+import { DynamicStructuredTool, DynamicTool, StructuredTool } from '@langchain/core/tools';
 import { z } from "zod";
-import { AppI, ToolSchema, ToolCall } from '@augmentos/sdk';
+import { ToolSchema, ToolCall, ToolParameterSchema } from '@augmentos/sdk';
 import axios, { AxiosError } from 'axios';
 
 
@@ -13,7 +13,7 @@ import axios, { AxiosError } from 'axios';
  * @throws AxiosError if the network request fails
  */
 
-export async function getAllToolsForPackage(cloudUrl: string, tpaPackageName: string, actingUserId: string) {
+export async function getAllToolsForPackage(cloudUrl: string, tpaPackageName: string, actingUserId: string): Promise<DynamicTool[]> {
   // Get the tools from the cloud
   const urlToGetTools = `${cloudUrl}/api/tools/apps/${tpaPackageName}/tools`;
   const response = await axios.get<ToolSchema[]>(urlToGetTools);
@@ -29,57 +29,34 @@ export async function getAllToolsForPackage(cloudUrl: string, tpaPackageName: st
   return tools;
 }
 
-export function compileTool(cloudUrl: string, tpaPackageName: string, tpaTool: ToolSchema, actingUserId: string) {
-  const paramsSchema = tpaTool.parameters ? z.object(
-    Object.entries(tpaTool.parameters).reduce((schema, [key, param]) => {
-      // Start with the base schema based on type
-      let fieldSchema;
-      switch (param.type) {
-        case 'string':
-          fieldSchema = z.string().describe(param.description);
-          // Add enum validation if provided
-          if (param.enum && param.enum.length > 0) {
-            fieldSchema = z.enum(param.enum as [string, ...string[]]).describe(param.description);
-          }
-          break;
-        case 'number':
-          fieldSchema = z.number().describe(param.description);
-          break;
-        case 'boolean':
-          fieldSchema = z.boolean().describe(param.description);
-          break;
-        default:
-          // Default to any for unknown types
-          fieldSchema = z.any().describe(param.description);
-      }
-
-      // Make optional if not required
-      if (!param.required) {
-        fieldSchema = fieldSchema.optional();
-      }
-
-      return { ...schema, [key]: fieldSchema };
-    }, {})
-  ) : undefined;
+export function compileTool(cloudUrl: string, tpaPackageName: string, tpaTool: ToolSchema, _actingUserId: string): DynamicTool {
 
   let description = tpaTool.description;
   if (tpaTool.activationPhrases && tpaTool.activationPhrases.length > 0) {
     description += "\nPossibly activated by phrases like: " + tpaTool.activationPhrases?.join(', ')
   }
 
-  return tool(
-    async (input): Promise<string> => {
+  return new DynamicTool({
+    name: tpaTool.id,
+    description: description,
+    func: async (input: string): Promise<string> => {
       // Construct the webhook URL for the TPA tool
       const webhookUrl = cloudUrl + `/api/tools/apps/${tpaPackageName}/tool`;
 
       // Prepare the payload with the input parameters
-      // Check if input is a string and set payload accordingly
-      const params:any = typeof input === 'string' ? {} : input;
+      // For DynamicTool, input is always a string, so we'll parse it as JSON if possible
+      let params: any = {};
+      if (input && input.trim()) {
+        try {
+          params = JSON.parse(input);
+        } catch {
+          // If not valid JSON, use the input as-is
+          params = { input: input };
+        }
+      }
       const payload: ToolCall = {
         toolId: tpaTool.id,
-        toolParameters: params,
-        timestamp: new Date(),
-        userId: actingUserId,
+        toolParameters: params
       }
       console.log(`[toolcall] Sending request to ${tpaTool.id} with params: ${JSON.stringify(params)}`);
       try {
@@ -115,13 +92,8 @@ export function compileTool(cloudUrl: string, tpaPackageName: string, tpaTool: T
           return `Error executing ${tpaTool.id}: ${genericError.message || 'Unknown error'}`;
         }
       }
-    },
-    {
-      name: tpaTool.id,
-      description: description,
-      schema: paramsSchema,
     }
-  ) as DynamicStructuredTool<any>;
+  });
 }
 
 /**
@@ -131,7 +103,7 @@ export function compileTool(cloudUrl: string, tpaPackageName: string, tpaTool: T
  * @returns A promise that resolves to an array of tools from all installed apps
  * @throws Error if authentication fails or if there are issues fetching apps/tools
  */
-export async function getAllToolsForUser(cloudUrl: string, userId: string) {
+export async function getAllToolsForUser(cloudUrl: string, userId: string): Promise<DynamicTool[]> {
   try {
     // Construct the URL to get all tools for the user
     const urlToGetUserTools = `${cloudUrl}/api/tools/users/${userId}/tools`;
@@ -144,7 +116,7 @@ export async function getAllToolsForUser(cloudUrl: string, userId: string) {
     console.log(`Found ${userTools.length} tools for user ${userId}`);
 
     // Compile all tools from all the user's installed apps
-    const tools: DynamicStructuredTool<any>[] = [];
+    const tools: DynamicTool[] = [];
 
     for (const toolSchema of userTools) {
       console.log(`Processing tool: ${toolSchema.id} from app: ${toolSchema.appPackageName}`);

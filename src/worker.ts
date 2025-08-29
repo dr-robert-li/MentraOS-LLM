@@ -42,6 +42,19 @@ export default {
         process.env.PERPLEXITY_API_KEY = env.PERPLEXITY_API_KEY;
 
         const llm = LLMProvider.getLLM();
+        
+        if (!llm) {
+          return new Response(JSON.stringify({ 
+            error: 'Failed to initialize LLM provider' 
+          }), {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
+          });
+        }
+        
         const response = await llm.invoke(body.message || 'Hello, this is a test message.');
 
         return new Response(JSON.stringify({ 

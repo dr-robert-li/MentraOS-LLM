@@ -120,6 +120,11 @@ export class NewsAgent implements Agent {
     try {
       // Initialize LLM via `LLMProvider`
       const llm = LLMProvider.getLLM(); // Returns a `ChatOpenAI` or another model
+      
+      if (!llm) {
+        console.error("Failed to initialize LLM provider");
+        return { news_summaries: [] };
+      }
 
       // Define the structured output parser (forces JSON format)
       const outputParser = new JsonOutputFunctionsParser({

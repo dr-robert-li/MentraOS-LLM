@@ -18,7 +18,7 @@ type ThinkingInput = z.infer<typeof ThinkingInputSchema>;
  * Input: { "thought": string }
  * Output: Returns a confirmation that the thought was processed
  */
-export class ThinkingTool extends StructuredTool {
+export class ThinkingTool extends StructuredTool<any> {
   name = 'Internal_Thinking';
   description = 'Allows the agent to write out internal thoughts, reasoning steps, or memos to self. Use this tool to organize your thinking process, note important considerations, or structure your approach to complex problems. Input: { "thought": string } with your thoughts.';
   schema = ThinkingInputSchema;

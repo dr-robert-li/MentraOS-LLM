@@ -148,6 +148,11 @@ export class NotificationFilterAgent implements Agent {
       });
       // Initialize LLM with settings.
       const llm = LLMProvider.getLLM();
+      
+      if (!llm) {
+        console.error("Failed to initialize LLM provider");
+        return { filtered_notifications: [] };
+      }
 
       // Call the LLM.
       const response = await llm.invoke(finalPrompt);

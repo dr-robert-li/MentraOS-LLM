@@ -17,8 +17,8 @@ COPY package*.json ./
 COPY bun.lock* ./
 
 # Install dependencies (include dev for build)
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN npm ci
+ENV NODE_OPTIONS="--max-old-space-size=8192"
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -35,7 +35,7 @@ RUN apk add --no-cache curl
 
 # Copy package files and install only production dependencies
 COPY --from=build /app/package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # Copy built application and assets  
 COPY --from=build /app/dist ./dist

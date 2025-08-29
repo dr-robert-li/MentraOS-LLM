@@ -28,7 +28,7 @@ type SearchInput = z.infer<typeof SearchInputSchema>;
  *
  * The tool returns LLM-friendly search results as a text string.
  */
-export class SearchToolForAgents extends StructuredTool {
+export class SearchToolForAgents extends StructuredTool<any> {
   name = 'Search_Engine';
   description = 'Searches the web for information about a given query using Jina AI. Pass specific queries and/or keywords to quickly search the web and retrieve information on any topic like academic research, history, entertainment, current events. This tool does NOT work for personal information and does NOT work for math. Input: { "searchKeyword": string, "location"?: string }';
   schema = SearchInputSchema;
