@@ -137,3 +137,39 @@ dist
 
 # Docker override for local development
 docker-compose.override.yml
+
+# Cloudflare Workers
+.wrangler/
+.dev.vars
+wrangler.toml.bak
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build artifacts and compiled output
+*.js.map
+*.d.ts.map
+
+# Test coverage
+coverage/
+.coverage/
+
+# Temporary files
+*.tmp
+*.temp
+.tmpdir
+
+# Bun specific
+bun.lockb

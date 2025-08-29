@@ -1,0 +1,23 @@
+name = "mira-llm"
+main = "dist/worker.js"
+compatibility_date = "2024-01-15"
+node_compat = true
+
+[env.production]
+name = "mira-llm-prod"
+
+[env.development]
+name = "mira-llm-dev"
+
+# Add your environment variables here
+[vars]
+NODE_ENV = "production"
+
+# For LangChain and other Node.js dependencies
+[build]
+command = "npm run build:worker"
+
+# If you need KV storage, D1 database, or other Cloudflare services
+# [[kv_namespaces]]
+# binding = "MY_KV"
+# id = "your-kv-namespace-id"

@@ -10,6 +10,10 @@
     "docker:build": "docker compose -f docker/docker-compose.dev.yml -p dev build",
     "ngrok": "ngrok http --url=mira.ngrok.dev 8040",
     "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "build:worker": "tsc --project tsconfig.worker.json && bun build ./dist/worker.js --outdir ./dist --target browser --format esm --outfile dist/worker.js",
+    "deploy": "wrangler deploy",
+    "deploy:dev": "wrangler deploy --env development",
+    "deploy:prod": "wrangler deploy --env production",
     "start": "bun src/index.ts",
     "add": "docker exec -it mira-dev bun add",
     "add:dev": "docker exec -it mira-dev bun add -d",
@@ -51,6 +55,8 @@
     "ws": "^8.18.1"
   },
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.2",
+    "@cloudflare/workers-types": "^4.20240620.0",
+    "wrangler": "^3.57.2"
   }
 }
