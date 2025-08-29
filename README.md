@@ -43,6 +43,15 @@ MentraOS is a comprehensive AI-powered platform for smart glasses that provides 
 - **Docker**: Containerized local/cloud deployment
 - **Express.js**: Development server with hot reload
 
+## 📦 Requirements
+
+- Cloudflare Workers account (for deployment)
+- Wrangler CLI installed and authenticated
+- Node.js 22+ or Bun 1.2+
+- esbuild (bundles @augmentos/sdk for Workers)
+- API keys for your chosen LLM provider(s)
+- LocationIQ API key (for location services)
+
 ## 🚀 Getting Started
 
 ### Prerequisites

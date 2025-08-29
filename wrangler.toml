@@ -17,7 +17,7 @@ LLM_MODEL = "sonar"
 
 # For LangChain and other Node.js dependencies
 [build]
-command = "npm run build:worker"
+command = "esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --platform=neutral --external:@cloudflare/workers-types"
 
 # KV namespace for session persistence
 # Note: For production deployment, you'll need to set these IDs via:
