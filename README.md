@@ -93,7 +93,8 @@ See [TROUBLESHOOTING](TROUBLESHOOTING) for detailed troubleshooting steps and so
 
 ## Acknowledgements
 
-- Built with the MentraOS SDK
+- This is a fork of the MentraOS [Mira](https://github.com/Mentra-Community/Mira) project - thank you to the original makers and the Mentra-Community for their foundational work
+- Built with the MentraOS SDK, migrated from original AugmentOS SDK
 - Supports multiple LLM providers for maximum flexibility
 - Optimized for smart glasses constraints and performance
 
