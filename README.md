@@ -57,11 +57,18 @@ See [.env.example](.env.example) for all available configuration options includi
 # Set your project
 gcloud config set project YOUR_PROJECT_ID
 
+# Update app configuration
+cp app-config.example.json your-developer-id.mentraos.app-name_config.json
+# Edit the config file with your specific app details
+
 # Deploy directly from source
 npm run deploy:gcloud
 
 # Or build and deploy container
 npm run deploy:gcloud:build
+
+# After deployment, submit your app to the Mentra Glass Developer Console
+# Visit: https://console.mentra.glass/apps
 ```
 
 ### Other Platforms
@@ -84,12 +91,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For issues and questions:
 - Create an issue on GitHub
-- Check the [TROUBLESHOOTING](TROUBLESHOOTING) guide
+- Check the [TROUBLESHOOTING](TROUBLESHOOTING.md) guide
 - Review Google Cloud Run documentation
 
 ## Troubleshooting
 
-See [TROUBLESHOOTING](TROUBLESHOOTING) for detailed troubleshooting steps and solutions to common issues.
+See [TROUBLESHOOTING](TROUBLESHOOTING.md) for detailed troubleshooting steps and solutions to common issues.
 
 ## Acknowledgements
 

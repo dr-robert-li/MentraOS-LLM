@@ -152,6 +152,7 @@ cloudrun.yaml
 
 # MentraOS App Config (user-specific)
 *_config.json
+dr-robert-li-au.mentraos.mentraos-llm_config.json
 
 # IDE and Editor files
 .vscode/
