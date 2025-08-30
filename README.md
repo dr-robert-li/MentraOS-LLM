@@ -1,5 +1,5 @@
 # MentraOS LLM 
-### Version: 0.4
+### Version: 0.4.1
 
 AI-powered virtual assistant for Mentra smart glasses, deployable to Google Cloud Run and other Node.js platforms.
 

@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-08-30
+### Fixed
+- **CRITICAL**: Fixed duplicate SystemMessage bug causing multi-turn conversation failures
+- **CRITICAL**: Fixed Perplexity API BadRequestError 400 in follow-up conversations
+- **CRITICAL**: Fixed container restart cycles caused by LLM conversation state errors
+- **Health Checks**: Improved Cloud Run health probe configuration and reliability
+- **TypeScript**: Fixed build errors accessing private properties in AppServer
+- **Git Management**: Removed cloudrun.yaml from remote repository tracking
+
+### Changed
+- **Health Endpoints**: Switched to built-in MiraServer health check instead of custom endpoints
+- **Message State**: Added conditional SystemMessage insertion to prevent API violations
+- **Probe Configuration**: Enhanced startup and liveness probe settings for better reliability
+- **Documentation**: Updated cloudrun.yaml.example with improved health check configuration
+
+### Technical Details
+- Added conditional check in MiraAgent.ts:300-304 to prevent duplicate SystemMessage addition
+- Updated cloudrun.yaml probe configuration: startup (30 failures over 5min), liveness (5 failures)
+- Removed custom health endpoints that caused TypeScript compilation errors
+- Added proper message alternation compliance for Perplexity API requirements
+
+### Author
+- Dr. Robert Li
+
 ## [0.4] - 2025-08-29
 ### Fixed
 - **CRITICAL**: Fixed app crashes during MentraOS settings updates in Android app

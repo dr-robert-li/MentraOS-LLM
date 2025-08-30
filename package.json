@@ -1,6 +1,6 @@
 {
   "name": "@augmentos/mira",
-  "version": "0.3.0",
+  "version": "0.4.1",
   "main": "dist/index.js",
   "scripts": {
     "dev": "bun --hot src/index.ts",
