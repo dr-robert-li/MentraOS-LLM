@@ -243,10 +243,10 @@ class TranscriptionManager {
             this.handleLocation(location);
           }
         }, error => {
-          this.session.logger.warn('Error getting location:', error);
+          this.session.logger.warn(error, 'Error getting location');
         });
       } catch (error) {
-        this.session.logger.warn('Error getting location:', error);
+        this.session.logger.warn(error, 'Error getting location');
       }
 
       // Start 15-second maximum listening timer
@@ -407,7 +407,7 @@ class TranscriptionManager {
   * Gracefully falls back to default values if location services fail
   */
   public async handleLocation(locationData: any): Promise<void> {
-    logger.debug({ locationData }, "$$$$$ Location data:");
+    this.logger.debug("Location data received", locationData);
     // Default fallback location context
     const fallbackLocationContext = {
       city: 'Unknown',
@@ -449,10 +449,10 @@ class TranscriptionManager {
             locationInfo.country = address.country || 'Unknown country';
           }
         } else {
-          logger.warn(`LocationIQ reverse geocoding failed with status: ${response.status}`);
+          this.logger.warn(`LocationIQ reverse geocoding failed with status: ${response.status}`);
         }
       } catch (geocodingError) {
-        logger.warn('Reverse geocoding failed:', geocodingError);
+        this.logger.warn(geocodingError as Error, 'Reverse geocoding failed');
       }
 
       try {
@@ -474,10 +474,10 @@ class TranscriptionManager {
             };
           }
         } else {
-          logger.warn(`LocationIQ timezone API failed with status: ${timezoneResponse.status}`);
+          this.logger.warn(`LocationIQ timezone API failed with status: ${timezoneResponse.status}`);
         }
       } catch (timezoneError) {
-        logger.warn('Timezone lookup failed:', timezoneError);
+        this.logger.warn(timezoneError as Error, 'Timezone lookup failed');
       }
 
       // Update the MiraAgent with location context (partial or complete)
@@ -1024,7 +1024,7 @@ class MiraServer extends AppServer {
       );
       
       const result = await Promise.race([
-        searchTool.invoke({
+        (searchTool as any).invoke({
           searchKeyword: parameters.query,
           location: parameters.location || undefined
         }),
@@ -1044,7 +1044,7 @@ class MiraServer extends AppServer {
       return 'App listing functionality not available';
     }
     
-    const result = await listAppsTool.invoke({
+    const result = await (listAppsTool as any).invoke({
       includeRunning: parameters.include_running || false
     });
     
@@ -1057,7 +1057,7 @@ class MiraServer extends AppServer {
       return 'App control functionality not available';
     }
     
-    const result = await controlAppTool.invoke({
+    const result = await (controlAppTool as any).invoke({
       action: parameters.action,
       packageName: parameters.packageName
     });
@@ -1071,7 +1071,7 @@ class MiraServer extends AppServer {
       return 'Calculator functionality not available';
     }
     
-    const result = await calculatorTool.invoke({
+    const result = await (calculatorTool as any).invoke({
       input: parameters.expression
     });
     

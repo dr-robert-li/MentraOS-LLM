@@ -49,7 +49,7 @@ export class MiraAgent implements Agent {
   public agentDescription =
     "Answers user queries from smart glasses using conversation context and history.";
   public agentPrompt = systemPromptBlueprint;
-  public agentTools:(Tool | StructuredTool)[];
+  public agentTools:(Tool | StructuredTool<any>)[];
 
   public messages: BaseMessage[] = [];
 
@@ -349,7 +349,7 @@ export class MiraAgent implements Agent {
               console.log(`[MiraAgent] Calling tool ${toolCall.name} with input:`, toolInput);
               let toolResult: any;
               try {
-                toolResult = await selectedTool.invoke(toolInput, {
+                toolResult = await (selectedTool as any).invoke(toolInput, {
                   configurable: { runId: toolCall.id }
                 });
                 if (toolResult === GIVE_APP_CONTROL_OF_TOOL_RESPONSE) {
