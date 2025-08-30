@@ -46,7 +46,7 @@
    - Force close the MentraOS app
    - Clear app cache/data if needed
    - Reopen app (should work with default settings)
-   - Re-enter a **valid** API key
+   - If you have entered a **valid** API key then this should have been set asynchronously on your container
 
 ### ⚙️ Configuration Issues
 
@@ -125,7 +125,7 @@
 **Problem:** Cold Start Issues
 
 **Solutions:**
-1. **Set Minimum Instances:** Prevent cold starts for production
+1. **Set Minimum Instances (1):** Prevent cold starts for production
 2. **Optimize Dependencies:** Remove unused packages
 3. **Use CPU Allocation:** Keep instance warm with minimal CPU
 
