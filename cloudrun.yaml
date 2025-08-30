@@ -80,19 +80,30 @@ spec:
             cpu: 2000m
             memory: 2Gi
         startupProbe:
-          timeoutSeconds: 5
-          periodSeconds: 10
-          failureThreshold: 24
-          tcpSocket:
+          httpGet:
+            path: /health
             port: 8080
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
         # Add liveness probe for health monitoring
         livenessProbe:
           httpGet:
-            path: /
+            path: /health
             port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 30
+          initialDelaySeconds: 60
+          periodSeconds: 60
           timeoutSeconds: 10
+          failureThreshold: 5
+        # Add readiness probe to ensure service is ready
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
           failureThreshold: 3
   traffic:
   - percent: 100

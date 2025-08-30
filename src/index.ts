@@ -1166,6 +1166,21 @@ const server = new MiraServer({
   healthCheck: true // Enable built-in health check endpoint
 });
 
+// Add custom health endpoint that always returns 200 OK
+server.app?.get('/health', (_req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    service: 'mentraos-llm',
+    version: '0.4'
+  });
+});
+
+// Add basic root endpoint for liveness probe
+server.app?.get('/', (_req, res) => {
+  res.status(200).send('OK');
+});
+
 server.start()
   .then(() => {
     logger.info(`${PACKAGE_NAME} server running`);
