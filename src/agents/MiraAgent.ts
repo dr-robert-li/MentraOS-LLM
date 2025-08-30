@@ -297,7 +297,11 @@ export class MiraAgent implements Agent {
         .replace("{timezone_context}", localtimeContext)
         .replace("{photo_context}", photoContext);
 
-      this.messages.push(new SystemMessage(systemPrompt));
+      // Only add SystemMessage if this is the first message in the conversation
+      // This prevents duplicate system messages which violate Perplexity's API requirements
+      if (this.messages.length === 0 || !(this.messages[0] instanceof SystemMessage)) {
+        this.messages.push(new SystemMessage(systemPrompt));
+      }
       const photoAsBase64 = photo ? `data:image/jpeg;base64,${photo.buffer.toString('base64')}` : null;
 
       // Create human message with optional image
