@@ -129,23 +129,25 @@ spec:
             cpu: 2000m      # 2 vCPUs minimum - ensures consistent performance
             memory: 2Gi     # 2 GB RAM minimum - baseline for Node.js + LLMs
         
-        # Health checks optimized for LLM startup times
+        # Health checks optimized for LLM startup times and reliability
         startupProbe:
-          timeoutSeconds: 240
-          periodSeconds: 10
-          failureThreshold: 24
-          tcpSocket:
+          httpGet:
+            path: /health
             port: 8080
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
         
-        # Continuous health monitoring
+        # Continuous health monitoring with dedicated health endpoint
         livenessProbe:
           httpGet:
-            path: /
+            path: /health
             port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 30
+          initialDelaySeconds: 60
+          periodSeconds: 60
           timeoutSeconds: 10
-          failureThreshold: 3
+          failureThreshold: 5
           
   traffic:
   - percent: 100
@@ -207,8 +209,21 @@ spec:
 #    # Check service status:
 #    curl https://your-service-url.run.app/
 #
-# 8. TROUBLESHOOTING:
+# 8. HEALTH CHECK ENDPOINTS:
+#    The application provides dedicated health check endpoints:
+#    - /health: Returns detailed JSON status (recommended for probes)
+#    - /: Returns simple "OK" status (basic liveness check)
+#    
+#    Health check configuration:
+#    - Startup probe: 30 failures allowed over 5 minutes (300s)
+#    - Liveness probe: 5 failures allowed over 5 minutes (less aggressive)
+#    - Uses HTTP GET instead of TCP for more reliable health verification
+#    - Isolated from main LLM processing to prevent restart cycles
+#
+# 9. TROUBLESHOOTING:
 #    - "No query provided" errors: Check wake word removal logic and transcription
-#    - Slow responses: Increase CPU/memory resources
+#    - Slow responses: Increase CPU/memory resources or check LLM API latency
 #    - API key errors: Verify secrets are created and accessible
 #    - Container startup fails: Check environment variables and image path
+#    - Frequent restarts: Check /health endpoint and liveness probe settings
+#    - LLM errors causing restarts: Health checks are isolated from LLM failures

@@ -96,14 +96,6 @@ spec:
           periodSeconds: 60
           timeoutSeconds: 10
           failureThreshold: 5
-        # Add readiness probe to ensure service is ready
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          periodSeconds: 30
-          timeoutSeconds: 5
-          failureThreshold: 3
   traffic:
   - percent: 100
     latestRevision: true
