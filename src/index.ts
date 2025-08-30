@@ -919,7 +919,7 @@ class MiraServer extends AppServer {
         
         // Debug logging for settings changes
         if (settings) {
-          logger.info(`[Session ${sessionId}] Settings change received:`, JSON.stringify(settings));
+          logger.info(`[Session ${sessionId}] Settings change received: ${JSON.stringify(settings)}`);
           
           // Log current actual settings state after change
           const currentProvider = session.settings.get<string>('llm_provider');

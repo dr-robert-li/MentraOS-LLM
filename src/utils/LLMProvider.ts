@@ -81,7 +81,7 @@ export class LLMProvider {
       
       // Log the source of configuration for debugging
       if (session) {
-        const sessionId = session.sessionId || 'unknown';
+        const sessionId = session.userId || 'unknown';
         logger.info(`[Session ${sessionId}] LLMProvider: Using provider='${provider}' from ${LLMProvider.getSettingSource(session, "llm_provider", process.env.LLM_PROVIDER)}`);
         logger.info(`[Session ${sessionId}] LLMProvider: Using model='${model}' from ${LLMProvider.getSettingSource(session, "llm_model", process.env.LLM_MODEL)}`);
         
