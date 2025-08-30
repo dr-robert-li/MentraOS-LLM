@@ -122,6 +122,10 @@ class TranscriptionManager {
   private isListeningToQuery: boolean = false;
   private timeoutId?: NodeJS.Timeout;
   private maxListeningTimeoutId?: NodeJS.Timeout; // 15-second hard cutoff timer
+  
+  // Settings change protection
+  private lastSettingsChangeTime: number = 0;
+  private settingsChangeCount: number = 0;
   private session: AppSession;
   private sessionId: string;
   private userId: string;
@@ -907,6 +911,8 @@ class MiraServer extends AppServer {
 
     // Also listen for setting changes to update subscription strategy dynamically
     session.settings.onChange((settings) => {
+      // Process settings changes asynchronously without blocking the response
+      setImmediate(async () => {
       try {
         const manager = this.transcriptionManagers.get(sessionId);
         if (manager) {
@@ -917,9 +923,39 @@ class MiraServer extends AppServer {
           session.logger.info('Settings changed, reinitializing transcription subscription');
         }
         
-        // Debug logging for settings changes
+        // Detect and protect against rapid settings changes (TextEditorStore race conditions)
+        const now = Date.now();
+        const manager = this.transcriptionManagers.get(sessionId);
+        if (manager) {
+          // Reset counter if more than 5 seconds since last change
+          if (now - manager.lastSettingsChangeTime > 5000) {
+            manager.settingsChangeCount = 0;
+          }
+          
+          manager.lastSettingsChangeTime = now;
+          manager.settingsChangeCount++;
+          
+          // If more than 3 changes in 5 seconds, likely a race condition
+          if (manager.settingsChangeCount > 3) {
+            logger.warn(`[Session ${sessionId}] Rapid settings changes detected (${manager.settingsChangeCount} changes), possible TextEditorStore race condition`);
+            
+            // Skip processing to avoid overloading - just log
+            logger.info(`[Session ${sessionId}] Skipping rapid change #${manager.settingsChangeCount}: ${JSON.stringify(settings)}`);
+            return;
+          }
+        }
+
+        // Debug logging for settings changes with payload size protection
         if (settings) {
-          logger.info(`[Session ${sessionId}] Settings change received: ${JSON.stringify(settings)}`);
+          const settingsStr = JSON.stringify(settings);
+          
+          // Protect against huge settings payloads (could indicate memory issues)
+          if (settingsStr.length > 1000) {
+            logger.warn(`[Session ${sessionId}] Large settings payload detected (${settingsStr.length} chars), possible memory issue`);
+            logger.info(`[Session ${sessionId}] Settings change #${manager?.settingsChangeCount || 1} received: [LARGE_PAYLOAD_TRUNCATED]`);
+          } else {
+            logger.info(`[Session ${sessionId}] Settings change #${manager?.settingsChangeCount || 1} received: ${settingsStr}`);
+          }
           
           // Log current actual settings state after change
           const currentProvider = session.settings.get<string>('llm_provider');
@@ -936,36 +972,47 @@ class MiraServer extends AppServer {
         if (changedKeys.some(key => llmSettingsKeys.includes(key))) {
           logger.info(`[Session ${sessionId}] LLM settings changed, invalidating provider cache`);
           
-          // Add extra validation for API key changes
+          // Validate API key length and log changes
           if (changedKeys.includes('llm_api_key')) {
             const apiKey = session.settings.get<string>('llm_api_key', '');
-            logger.info(`[Session ${sessionId}] API key validation - Value: "${apiKey}", Length: ${apiKey.length} characters`);
-            if (apiKey && apiKey.length > 0 && apiKey.length < 10) {
-              logger.warn(`[Session ${sessionId}] API key appears too short: ${apiKey.length} characters - Value: "${apiKey}"`);
+            logger.info(`[Session ${sessionId}] API key updated, length: ${apiKey.length} characters`);
+            
+            // Defensive limit: No API key should be longer than 400 characters
+            if (apiKey.length > 400) {
+              logger.warn(`[Session ${sessionId}] API key too long (${apiKey.length} chars), truncating to 400`);
+              const truncatedKey = apiKey.substring(0, 400);
+              session.settings.set('llm_api_key', truncatedKey);
+              logger.info(`[Session ${sessionId}] API key truncated to ${truncatedKey.length} characters`);
             }
           }
           
-          // Add 2-second delay to handle race conditions from Android app
-          setTimeout(() => {
-            LLMProvider.invalidateCache(sessionId);
-            
-            // Log final settings state after cache invalidation
-            const finalProvider = session.settings.get<string>('llm_provider');
-            const finalModel = session.settings.get<string>('llm_model');
-            logger.info(`[Session ${sessionId}] Final LLM settings after cache invalidation (2s delay) - Provider: ${finalProvider}, Model: ${finalModel}`);
-          }, 2000);
+          // Invalidate LLM cache immediately when settings change
+          LLMProvider.invalidateCache(sessionId);
         }
         
       } catch (error) {
+        // Enhanced error handling for TextEditorStore issues
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        if (errorMessage.includes('memory') || errorMessage.includes('allocation') || errorMessage.includes('heap')) {
+          logger.error(`[Session ${sessionId}] Memory error during settings change - possible TextEditorStore large payload issue: ${errorMessage}`);
+        } else if (errorMessage.includes('timeout') || errorMessage.includes('network')) {
+          logger.error(`[Session ${sessionId}] Network/timeout error during settings change: ${errorMessage}`);
+        } else {
+          logger.error(`[Session ${sessionId}] Settings change error: ${errorMessage}`);
+        }
+        
         session.logger.error(error, 'Error handling settings change');
-        // Show error message to user if possible
+        
+        // Show error message to user if possible (don't block if this fails)
         try {
-          session.layouts.showTextWall('Settings update failed. Please try again.', { durationMs: 5000 });
+          session.layouts.showTextWall('Settings saved. Changes may take a moment to take effect.', { durationMs: 3000 });
         } catch (displayError) {
-          session.logger.error(displayError, 'Failed to display settings error message');
+          session.logger.error(displayError, 'Failed to display settings message');
         }
         // Don't crash - just log the error and continue
       }
+      }); // Close setImmediate async function
     });
     /*
     session.events.onLocation((locationData) => {

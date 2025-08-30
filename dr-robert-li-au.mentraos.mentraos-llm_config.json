@@ -1,6 +1,6 @@
 {
   "name": "MentraLLM",
-  "description": "BYO LLM to MentraOS. Settings changes take 2 seconds to apply.",
+  "description": "BYO LLM to MentraOS. Bring your own LLM provider for enhanced privacy and control.",
   "onboardingInstructions": "",
   "publicUrl": "https://mentraos-llm-410741782200.us-central1.run.app",
   "logoURL": "https://imagedelivery.net/nrc8B2Lk8UIoyW7fY8uHVg/aed21a21-f1a4-4306-a276-8f3f46e08200/square",
@@ -36,7 +36,7 @@
       "type": "group",
       "key": "",
       "label": "",
-      "title": "LLM Provider Settings (2s delay after changes)"
+      "title": "LLM Provider Settings"
     },
     {
       "type": "select",
@@ -135,7 +135,7 @@
       "key": "llm_api_key",
       "label": "API Key (Optional)",
       "defaultValue": "",
-      "description": "Leave empty to use server environment variables. Changes may take up to 2 seconds to take effect."
+      "description": "Leave empty to use server environment variables for the selected provider."
     }
   ],
   "tools": [
