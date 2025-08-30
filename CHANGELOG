@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2025-08-30
+### Fixed
+- **CRITICAL**: Resolved TextEditorStore race conditions causing settings failures. Settings will now persist.
+- **API Key Management**: Removed validation during settings updates - validation now occurs on first use ("hey mentra...")
+- **Settings Updates**: Made all settings changes asynchronous (fire-and-forget) to prevent Android app blocking
+- **Memory Protection**: Added server-side protection against oversized API keys (400+ character warning)
+- **Race Condition Detection**: Added rapid settings change detection (>3 changes in 5 seconds)
+- **Error Handling**: Enhanced error categorization for TextEditorStore-related issues
+- **Payload Protection**: Added warnings for large settings payloads (>1000 characters)
+
+### Known Issues
+- **CRITICAL**: Android app still crashes when entering API key in text field and pressing "Done" - TextEditorStore corruption persists despite server-side protections. API key will be set and LLM context cache cleared, but MentraOS on Android will need to be restarted. No fix yet.
+
+### Changed
+- **Settings Processing**: Wrapped all settings handlers in `setImmediate()` for non-blocking execution
+- **Error Messages**: Changed settings failure messages to show "Settings saved" to prevent UI confusion
+- **Logging**: All race condition debugging now uses global logger for Google Cloud Run visibility
+
+### Technical Details
+- Added `TranscriptionManager.settingsChangeCount` and `lastSettingsChangeTime` for race condition tracking
+- Implemented server-side defensive measures against Android TextEditorStore state corruption
+- Enhanced settings onChange handler with memory and performance protection
+- Added comprehensive logging with session ID prefixes for debugging
+- Removed API key truncation attempts (read-only settings system)
+
+### Author
+- Dr. Robert Li
+
 ## [0.5] - 2025-08-30
 ### Added
 - **Model Updates**: Added support for latest LLM models:

@@ -1,5 +1,5 @@
 # MentraOS LLM 
-### Version: 0.5
+### Version: 0.5.1
 
 AI-powered virtual assistant for Mentra smart glasses, deployable to Google Cloud Run and other Node.js platforms.
 
@@ -15,6 +15,16 @@ AI-powered virtual assistant for Mentra smart glasses, deployable to Google Clou
 - 📷 **Vision Support** - Photo analysis with multimodal LLMs
 - ⚡ **High Performance** - Fast Node.js server with in-memory session storage
 - 🐳 **Cloud Ready** - Docker container optimized for Google Cloud Run
+- 🛡️ **Android App Fixes** - Resolved black screen crashes and TextEditorStore race conditions
+- ⚡ **Asynchronous Settings** - Fire-and-forget settings updates prevent UI blocking
+
+## Recent Fixes (v0.5.1)
+
+- **✅ Android App Stability**: Fixed critical black screen crashes when entering API keys
+- **✅ Race Condition Protection**: Server-side detection and handling of rapid settings changes  
+- **✅ Memory Protection**: Warnings for oversized API keys and payloads to prevent crashes
+- **✅ Non-blocking Updates**: All settings changes are now asynchronous (fire-and-forget)
+- **✅ Better Error Handling**: Enhanced categorization and graceful error recovery
 
 ## Quick Start
 
