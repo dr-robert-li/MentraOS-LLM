@@ -124,8 +124,8 @@ class TranscriptionManager {
   private maxListeningTimeoutId?: NodeJS.Timeout; // 15-second hard cutoff timer
   
   // Settings change protection
-  private lastSettingsChangeTime: number = 0;
-  private settingsChangeCount: number = 0;
+  public lastSettingsChangeTime: number = 0;
+  public settingsChangeCount: number = 0;
   private session: AppSession;
   private sessionId: string;
   private userId: string;
@@ -925,22 +925,22 @@ class MiraServer extends AppServer {
         
         // Detect and protect against rapid settings changes (TextEditorStore race conditions)
         const now = Date.now();
-        const manager = this.transcriptionManagers.get(sessionId);
-        if (manager) {
+        const settingsManager = this.transcriptionManagers.get(sessionId);
+        if (settingsManager) {
           // Reset counter if more than 5 seconds since last change
-          if (now - manager.lastSettingsChangeTime > 5000) {
-            manager.settingsChangeCount = 0;
+          if (now - settingsManager.lastSettingsChangeTime > 5000) {
+            settingsManager.settingsChangeCount = 0;
           }
           
-          manager.lastSettingsChangeTime = now;
-          manager.settingsChangeCount++;
+          settingsManager.lastSettingsChangeTime = now;
+          settingsManager.settingsChangeCount++;
           
           // If more than 3 changes in 5 seconds, likely a race condition
-          if (manager.settingsChangeCount > 3) {
-            logger.warn(`[Session ${sessionId}] Rapid settings changes detected (${manager.settingsChangeCount} changes), possible TextEditorStore race condition`);
+          if (settingsManager.settingsChangeCount > 3) {
+            logger.warn(`[Session ${sessionId}] Rapid settings changes detected (${settingsManager.settingsChangeCount} changes), possible TextEditorStore race condition`);
             
             // Skip processing to avoid overloading - just log
-            logger.info(`[Session ${sessionId}] Skipping rapid change #${manager.settingsChangeCount}: ${JSON.stringify(settings)}`);
+            logger.info(`[Session ${sessionId}] Skipping rapid change #${settingsManager.settingsChangeCount}: ${JSON.stringify(settings)}`);
             return;
           }
         }
@@ -952,9 +952,9 @@ class MiraServer extends AppServer {
           // Protect against huge settings payloads (could indicate memory issues)
           if (settingsStr.length > 1000) {
             logger.warn(`[Session ${sessionId}] Large settings payload detected (${settingsStr.length} chars), possible memory issue`);
-            logger.info(`[Session ${sessionId}] Settings change #${manager?.settingsChangeCount || 1} received: [LARGE_PAYLOAD_TRUNCATED]`);
+            logger.info(`[Session ${sessionId}] Settings change #${settingsManager?.settingsChangeCount || 1} received: [LARGE_PAYLOAD_TRUNCATED]`);
           } else {
-            logger.info(`[Session ${sessionId}] Settings change #${manager?.settingsChangeCount || 1} received: ${settingsStr}`);
+            logger.info(`[Session ${sessionId}] Settings change #${settingsManager?.settingsChangeCount || 1} received: ${settingsStr}`);
           }
           
           // Log current actual settings state after change
@@ -979,10 +979,8 @@ class MiraServer extends AppServer {
             
             // Defensive limit: No API key should be longer than 400 characters
             if (apiKey.length > 400) {
-              logger.warn(`[Session ${sessionId}] API key too long (${apiKey.length} chars), truncating to 400`);
-              const truncatedKey = apiKey.substring(0, 400);
-              session.settings.set('llm_api_key', truncatedKey);
-              logger.info(`[Session ${sessionId}] API key truncated to ${truncatedKey.length} characters`);
+              logger.warn(`[Session ${sessionId}] API key too long (${apiKey.length} chars) - this may cause memory issues. Consider using a shorter key.`);
+              // Note: Cannot modify settings here, just warn about the issue
             }
           }
           
