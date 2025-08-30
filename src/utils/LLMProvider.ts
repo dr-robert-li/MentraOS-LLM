@@ -19,18 +19,21 @@ const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY || "";
 // Need to define LLMModel enum for the switch case in LLMProvider
 export enum LLMModel {
   // OpenAI Models
-  GPT4 = 'gpt-4o',
-  GPT4_MINI = 'gpt-4o-mini',
   GPT5 = 'gpt-5',
   GPT5_MINI = 'gpt-5-mini',
+  GPT5_NANO = 'gpt-5-nano',
   
   // Anthropic Models
-  CLAUDE_3 = 'claude-3-5-sonnet-20241022',
-  CLAUDE_3_HAIKU = 'claude-3-5-haiku-20241022',
-  CLAUDE_4 = 'claude-3-5-sonnet-20250108', // Latest Sonnet (often referred to as "Sonnet 4")
+  CLAUDE_OPUS_4_1 = 'claude-opus-4-1-20250805',
+  CLAUDE_OPUS_4 = 'claude-opus-4-20250514',
+  CLAUDE_SONNET_4 = 'claude-sonnet-4-20250514',
+  CLAUDE_SONNET_3_7 = 'claude-3-7-sonnet-20250219',
+  CLAUDE_HAIKU_3_5 = 'claude-3-5-haiku-20241022',
   
   // Google Models
-  GEMINI_PRO = 'gemini-pro',
+  GEMINI_2_5_PRO = 'gemini-2.5-pro',
+  GEMINI_2_5_FLASH = 'models/gemini-2.5-flash',
+  GEMINI_2_5_FLASH_LITE = 'models/gemini-2.5-flash-lite',
   GEMINI_2_FLASH = 'gemini-2.0-flash-exp',
   GEMINI_2_PRO = 'gemini-2.0-flash-thinking-exp',
   
@@ -47,17 +50,33 @@ export enum LLMService {
   PERPLEXITY = 'perplexity',
 }
 
-export const LLM_MODEL = process.env.LLM_MODEL || LLMModel.GPT4;
+export const LLM_MODEL = process.env.LLM_MODEL || LLMModel.GPT5;
 export const LLM_PROVIDER = process.env.LLM_PROVIDER || LLMService.AZURE;
 
 import { AppSession } from "@mentra/sdk";
 
 export class LLMProvider {
+  // Cache to store LLM instances by session ID to avoid recreation
+  private static llmCache = new Map<string, any>();
+  
+  /**
+   * Invalidates the LLM cache for a specific session or all sessions
+   */
+  static invalidateCache(sessionId?: string) {
+    if (sessionId) {
+      this.llmCache.delete(sessionId);
+      console.log(`LLMProvider: Invalidated cache for session ${sessionId}`);
+    } else {
+      this.llmCache.clear();
+      console.log("LLMProvider: Invalidated all cached LLM instances");
+    }
+  }
+
   static getLLM(session?: AppSession) {
     try {
       // Priority order: User settings > Environment variables > Defaults
       const provider = LLMProvider.getSettingWithFallback(session, "llm_provider", process.env.LLM_PROVIDER, LLMService.PERPLEXITY) as LLMService;
-      const model = LLMProvider.getSettingWithFallback(session, "llm_model", process.env.LLM_MODEL, LLMModel.SONAR) as LLMModel;
+      const model = LLMProvider.getSettingWithFallback(session, "llm_model", process.env.LLM_MODEL, LLMModel.CLAUDE_SONNET_4) as LLMModel;
       
       // Log the source of configuration for debugging
       if (session) {
@@ -72,24 +91,26 @@ export class LLMProvider {
       }
 
       const supportedAzureModels = [
-        LLMModel.GPT4,
-        LLMModel.GPT4_MINI,
         LLMModel.GPT5,
         LLMModel.GPT5_MINI,
+        LLMModel.GPT5_NANO,
       ]
       const supportedOpenAIModels = [
-        LLMModel.GPT4,
-        LLMModel.GPT4_MINI,
         LLMModel.GPT5,
         LLMModel.GPT5_MINI,
+        LLMModel.GPT5_NANO,
       ]
       const supportedAnthropicModels = [
-        LLMModel.CLAUDE_3,
-        LLMModel.CLAUDE_3_HAIKU,
-        LLMModel.CLAUDE_4,
+        LLMModel.CLAUDE_OPUS_4_1,
+        LLMModel.CLAUDE_OPUS_4,
+        LLMModel.CLAUDE_SONNET_4,
+        LLMModel.CLAUDE_SONNET_3_7,
+        LLMModel.CLAUDE_HAIKU_3_5,
       ]
       const supportedGoogleModels = [
-        LLMModel.GEMINI_PRO,
+        LLMModel.GEMINI_2_5_PRO,
+        LLMModel.GEMINI_2_5_FLASH,
+        LLMModel.GEMINI_2_5_FLASH_LITE,
         LLMModel.GEMINI_2_FLASH,
         LLMModel.GEMINI_2_PRO,
       ]
@@ -103,7 +124,7 @@ export class LLMProvider {
           console.warn(`Unsupported Azure model: ${model}, falling back to default`);
           return LLMProvider.createDefaultLLM();
         }
-        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", AZURE_OPENAI_API_KEY, "Azure OpenAI");
+        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", AZURE_OPENAI_API_KEY, "Azure OpenAI", "azure");
         if (!apiKey) {
           console.warn("Azure API key missing, falling back to default LLM");
           return LLMProvider.createDefaultLLM();
@@ -128,7 +149,7 @@ export class LLMProvider {
           console.warn(`Unsupported OpenAI model: ${model}, falling back to default`);
           return LLMProvider.createDefaultLLM();
         }
-        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", OPENAI_API_KEY, "OpenAI");
+        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", OPENAI_API_KEY, "OpenAI", "openai");
         if (!apiKey) {
           console.warn("OpenAI API key missing, falling back to default LLM");
           return LLMProvider.createDefaultLLM();
@@ -150,7 +171,7 @@ export class LLMProvider {
           console.warn(`Unsupported Anthropic model: ${model}, falling back to default`);
           return LLMProvider.createDefaultLLM();
         }
-        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", ANTHROPIC_API_KEY, "Anthropic");
+        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", ANTHROPIC_API_KEY, "Anthropic", "anthropic");
         if (!apiKey) {
           console.warn("Anthropic API key missing, falling back to default LLM");
           return LLMProvider.createDefaultLLM();
@@ -172,7 +193,7 @@ export class LLMProvider {
           console.warn(`Unsupported Google model: ${model}, falling back to default`);
           return LLMProvider.createDefaultLLM();
         }
-        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", GOOGLE_API_KEY, "Google");
+        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", GOOGLE_API_KEY, "Google", "google");
         if (!apiKey) {
           console.warn("Google API key missing, falling back to default LLM");
           return LLMProvider.createDefaultLLM();
@@ -197,7 +218,7 @@ export class LLMProvider {
           console.warn(`Unsupported Perplexity model: ${model}, falling back to default`);
           return LLMProvider.createDefaultLLM();
         }
-        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", PERPLEXITY_API_KEY, "Perplexity");
+        const apiKey = LLMProvider.resolveApiKey(session, "llm_api_key", PERPLEXITY_API_KEY, "Perplexity", "perplexity");
         if (!apiKey) {
           console.warn("Perplexity API key missing, falling back to default LLM");
           return LLMProvider.createDefaultLLM();
@@ -243,7 +264,7 @@ export class LLMProvider {
       // Try OpenAI with environment key
       if (OPENAI_API_KEY) {
         return new ChatOpenAI({
-          modelName: LLMModel.GPT4_MINI,
+          modelName: LLMModel.GPT5_MINI,
           temperature: 0.3,
           maxTokens: 300,
           openAIApiKey: OPENAI_API_KEY,
@@ -253,7 +274,7 @@ export class LLMProvider {
       // Try Azure with environment keys
       if (AZURE_OPENAI_API_KEY) {
         return new AzureChatOpenAI({
-          modelName: LLMModel.GPT4_MINI,
+          modelName: LLMModel.GPT5_MINI,
           temperature: 0.3,
           maxTokens: 300,
           azureOpenAIApiKey: AZURE_OPENAI_API_KEY,
@@ -330,9 +351,9 @@ export class LLMProvider {
 
   /**
    * Resolves API key with proper priority and validation
-   * Priority: User settings > Environment secrets > Empty (fallback to default LLM)
+   * Priority: User settings > Provider-specific Environment secrets > Empty (fallback to default LLM)
    */
-  private static resolveApiKey(session: AppSession | undefined, settingKey: string, envApiKey: string, providerName: string): string | null {
+  private static resolveApiKey(session: AppSession | undefined, settingKey: string, envApiKey: string, providerName: string, selectedProvider?: string): string | null {
     let apiKey: string = "";
     let source: string = "";
 
@@ -350,10 +371,40 @@ export class LLMProvider {
       }
     }
 
-    // 2. Fallback to environment secrets
+    // 2. Fallback to provider-specific environment secrets
+    if (!apiKey && selectedProvider) {
+      let providerSpecificEnvKey: string = "";
+      
+      switch (selectedProvider.toLowerCase()) {
+        case "openai":
+          providerSpecificEnvKey = OPENAI_API_KEY;
+          break;
+        case "anthropic":
+          providerSpecificEnvKey = ANTHROPIC_API_KEY;
+          break;
+        case "google":
+          providerSpecificEnvKey = GOOGLE_API_KEY;
+          break;
+        case "perplexity":
+          providerSpecificEnvKey = PERPLEXITY_API_KEY;
+          break;
+        case "azure":
+          providerSpecificEnvKey = AZURE_OPENAI_API_KEY;
+          break;
+        default:
+          providerSpecificEnvKey = envApiKey; // fallback to passed envApiKey
+      }
+      
+      if (providerSpecificEnvKey) {
+        apiKey = providerSpecificEnvKey;
+        source = `environment secrets (${selectedProvider}-specific)`;
+      }
+    }
+    
+    // 3. Final fallback to generic environment key
     if (!apiKey && envApiKey) {
       apiKey = envApiKey;
-      source = "environment secrets";
+      source = "environment secrets (generic)";
     }
 
     // Log API key source for debugging (without exposing the key)

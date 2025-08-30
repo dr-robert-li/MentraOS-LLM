@@ -539,7 +539,7 @@ class TranscriptionManager {
       this.logger.error(fetchError, `[Session ${this.sessionId}]: Error fetching transcript:` + fetchError.message);
       this.session.layouts.showTextWall(
         wrapText("Sorry, there was an error retrieving your transcript. Please try again.", 30),
-        { durationMs: 5000 }
+        { durationMs: 8000 }
       );
       return;
     }
@@ -548,7 +548,7 @@ class TranscriptionManager {
       this.logger.error({ transcriptionResponse }, `[Session ${this.sessionId}]: Invalid response structure:`);
       this.session.layouts.showTextWall(
         wrapText("Sorry, the transcript format was invalid. Please try again.", 30),
-        { durationMs: 5000 }
+        { durationMs: 8000 }
       );
       return;
     }
@@ -576,7 +576,7 @@ class TranscriptionManager {
       this.logger.warn(`[processQuery] Empty query after processing. Raw text was: "${rawCombinedText}"`);
       this.session.layouts.showTextWall(
         wrapText("No query provided.", 30),
-        { durationMs: 5000 }
+        { durationMs: 8000 }
       );
       this.isProcessingQuery = false;
       return;
@@ -692,7 +692,7 @@ class TranscriptionManager {
   }
 
   private async showOrSpeakText(text: string): Promise<void> {
-    this.session.layouts.showTextWall(wrapText(text, 30), { durationMs: 5000 });
+    this.session.layouts.showTextWall(wrapText(text, 30), { durationMs: 10000 });
     const hasScreenProcess = this.session.capabilities?.hasDisplay;
     if (this.session.settings.get<boolean>("speak_response") || !hasScreenProcess) {
       try {
@@ -916,6 +916,16 @@ class MiraServer extends AppServer {
           // Log settings change for debugging
           session.logger.info('Settings changed, reinitializing transcription subscription');
         }
+        
+        // Invalidate LLM cache when LLM-related settings change
+        const changedKeys = Object.keys(settings || {});
+        const llmSettingsKeys = ['llm_provider', 'llm_model', 'llm_api_key'];
+        
+        if (changedKeys.some(key => llmSettingsKeys.includes(key))) {
+          session.logger.info('LLM settings changed, invalidating provider cache');
+          LLMProvider.invalidateCache(sessionId);
+        }
+        
       } catch (error) {
         session.logger.error(error, 'Error handling settings change');
         // Don't crash - just log the error and continue
@@ -935,11 +945,26 @@ class MiraServer extends AppServer {
     });
 
     // Handle connection events
-    /*
     session.events.onConnected((settings) => {
       logger.info(`\n[User ${userId}] connected to augmentos-cloud\n`);
+      
+      // Ensure LLM settings are properly initialized on connection
+      try {
+        const llmProvider = session.settings.get<string>('llm_provider');
+        const llmModel = session.settings.get<string>('llm_model'); 
+        const llmApiKey = session.settings.get<string>('llm_api_key');
+        
+        logger.info(`LLM Settings on connection - Provider: ${llmProvider}, Model: ${llmModel}, API Key: ${llmApiKey ? 'present' : 'missing'}`);
+        
+        // Pre-validate LLM configuration to catch issues early
+        if (llmProvider && llmModel) {
+          LLMProvider.getLLM(session);
+          logger.info('LLM provider successfully initialized on connection');
+        }
+      } catch (error) {
+        logger.error(error, 'Error initializing LLM provider on connection');
+      }
     });
-    */
 
     // Handle errors
     session.events.onError((error) => {

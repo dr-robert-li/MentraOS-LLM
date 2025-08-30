@@ -1,5 +1,5 @@
 # MentraOS LLM 
-### Version: 0.4.1
+### Version: 0.5
 
 AI-powered virtual assistant for Mentra smart glasses, deployable to Google Cloud Run and other Node.js platforms.
 
@@ -8,7 +8,7 @@ AI-powered virtual assistant for Mentra smart glasses, deployable to Google Clou
 ## Features
 
 - 🎯 **Wake Word Detection** - Responds to "Hey Mentra" and variations
-- 🧠 **Multi-LLM Support** - OpenAI GPT-4/5, Anthropic Claude, Google Gemini, Perplexity, Azure OpenAI
+- 🧠 **Multi-LLM Support** - OpenAI GPT-5/5 Mini/5 Nano, Claude Opus 4.1/Sonnet 4/Haiku 3.5, Google Gemini 2.5, Perplexity
 - 📍 **Location Aware** - LocationIQ integration for context-aware responses
 - 📱 **Notification Processing** - Smart filtering and summarization
 - 🔊 **Voice Processing** - Real-time transcription and audio responses
@@ -36,8 +36,8 @@ PACKAGE_NAME=MentraOS-LLM
 PORT=80
 
 # LLM Provider Configuration
-LLM_PROVIDER=perplexity
-LLM_MODEL=sonar
+LLM_PROVIDER=anthropic
+LLM_MODEL=claude-sonnet-4-20250514
 
 # API Keys (set only what you need)
 OPENAI_API_KEY=your_openai_key
@@ -115,8 +115,8 @@ After deployment, set your environment variables in Google Cloud Console:
    - `OPENAI_API_KEY`
    - `ANTHROPIC_API_KEY`
    - `LOCATIONIQ_TOKEN`
-   - `LLM_PROVIDER=perplexity`
-   - `LLM_MODEL=sonar`
+   - `LLM_PROVIDER=anthropic`
+   - `LLM_MODEL=claude-sonnet-4-20250514`
 
 ## API Endpoints
 
@@ -168,11 +168,11 @@ Test endpoint for validating LLM configuration.
 
 | Provider | Models | Features |
 |----------|--------|----------|
+| **Anthropic** | claude-opus-4-1, claude-sonnet-4, claude-haiku-3-5 | Superior reasoning, long context, safety |
+| **OpenAI** | gpt-5, gpt-5-mini, gpt-5-nano | Advanced reasoning, vision, high throughput |
+| **Google** | gemini-2.5-pro, gemini-2.5-flash, gemini-2.5-flash-lite | Multimodal, thinking capabilities |
 | **Perplexity** | sonar, sonar-pro | Web search, real-time data |
-| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-5 | Advanced reasoning, vision |
-| **Anthropic** | claude-3-5-sonnet, claude-3-5-haiku | Long context, safety |
-| **Google** | gemini-pro, gemini-2.0-flash | Multimodal, fast inference |
-| **Azure OpenAI** | gpt-4o, gpt-4o-mini | Enterprise compliance |
+| **Azure OpenAI** | gpt-5, gpt-5-mini, gpt-5-nano | Enterprise compliance |
 
 ### Wake Words
 

@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5] - 2025-08-30
+### Added
+- **Model Updates**: Added support for latest LLM models:
+  - **OpenAI**: GPT-5 Nano for high-throughput tasks
+  - **Anthropic**: Claude Opus 4.1 (most capable), Opus 4, Sonnet 4, Sonnet 3.7, Haiku 3.5
+  - **Google**: Gemini 2.5 Pro, 2.5 Flash, 2.5 Flash-Lite with thinking capabilities
+- **Smart Display Optimization**: Increased response word limit from 15 to 25 words for better UX
+- **Extended Display Duration**: Increased response display time from 5s to 10s, error messages to 8s
+- **LLM Cache Management**: Added cache invalidation system for settings changes
+
+### Changed
+- **Default Provider**: Changed from Perplexity to Anthropic (Claude Sonnet 4) for optimal smart glasses performance
+- **Model Selection**: Updated config.json with dropdown selections and descriptive labels
+- **Provider Support**: Removed Cohere provider (no implementation found in codebase)
+
+### Deprecated
+- **Legacy Models**: Removed support for deprecated models:
+  - Claude 3.5 Sonnet (20241022), Claude 3.5 Haiku (20241022), Claude 3.5 Sonnet (20250108)
+  - GPT-4o, GPT-4o-mini
+  - Gemini Pro (original)
+
+### Fixed
+- **API Key Resolution**: Fixed provider-specific environment variable matching
+- **Settings Synchronization**: Enhanced LLM provider cache invalidation on settings changes
+- **Connection Stability**: Improved CONNECTION_ACK message handling with mentraosSettings field
+- **Response Quality**: Eliminated conflicting system prompt instructions that caused response shortening
+
+### Technical Details
+- Updated LLMModel enum with latest model identifiers matching official API documentation
+- Enhanced LLMProvider.resolveApiKey() method for better provider-environment key matching
+- Added LLMProvider.invalidateCache() method for session-specific cache management
+- Updated MiraAgent system prompt to resolve 15-word vs detailed response conflicts
+- Set Claude Sonnet 4 as optimal default for 25-word smart glasses constraints
+
+### Author
+- Dr. Robert Li
+
 ## [0.4.1] - 2025-08-30
 ### Fixed
 - **CRITICAL**: Fixed duplicate SystemMessage bug causing multi-turn conversation failures
