@@ -3,6 +3,7 @@ import { AzureChatOpenAI } from "@langchain/openai";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatVertexAI } from "@langchain/google-vertexai";
 import { ChatPerplexity } from "@langchain/community/chat_models/perplexity";
+import { logger } from '@mentra/sdk';
 
 const AZURE_OPENAI_API_KEY = process.env.AZURE_OPENAI_API_KEY || "";
 const AZURE_OPENAI_API_INSTANCE_NAME = process.env.AZURE_OPENAI_API_INSTANCE_NAME || "";
@@ -65,10 +66,10 @@ export class LLMProvider {
   static invalidateCache(sessionId?: string) {
     if (sessionId) {
       this.llmCache.delete(sessionId);
-      console.log(`LLMProvider: Invalidated cache for session ${sessionId}`);
+      logger.info(`LLMProvider: Invalidated cache for session ${sessionId}`);
     } else {
       this.llmCache.clear();
-      console.log("LLMProvider: Invalidated all cached LLM instances");
+      logger.info("LLMProvider: Invalidated all cached LLM instances");
     }
   }
 
@@ -80,8 +81,14 @@ export class LLMProvider {
       
       // Log the source of configuration for debugging
       if (session) {
-        console.log(`LLMProvider: Using provider='${provider}' from ${LLMProvider.getSettingSource(session, "llm_provider", process.env.LLM_PROVIDER)}`);
-        console.log(`LLMProvider: Using model='${model}' from ${LLMProvider.getSettingSource(session, "llm_model", process.env.LLM_MODEL)}`);
+        const sessionId = session.sessionId || 'unknown';
+        logger.info(`[Session ${sessionId}] LLMProvider: Using provider='${provider}' from ${LLMProvider.getSettingSource(session, "llm_provider", process.env.LLM_PROVIDER)}`);
+        logger.info(`[Session ${sessionId}] LLMProvider: Using model='${model}' from ${LLMProvider.getSettingSource(session, "llm_model", process.env.LLM_MODEL)}`);
+        
+        // Additional debug logging for race condition detection
+        const rawProvider = session.settings.get<string>('llm_provider');
+        const rawModel = session.settings.get<string>('llm_model');
+        logger.info(`[Session ${sessionId}] LLMProvider: Raw settings - provider='${rawProvider}', model='${rawModel}'`);
       }
 
       // Validate provider and model before proceeding
@@ -364,6 +371,12 @@ export class LLMProvider {
         if (userApiKey && userApiKey.trim()) {
           apiKey = userApiKey.trim();
           source = "user settings";
+          
+          // Basic API key format validation
+          if (apiKey.length < 10) {
+            console.warn(`LLMProvider: ${providerName} API key appears too short (length: ${apiKey.length})`);
+            // Continue anyway - let the provider validate
+          }
         }
       } catch (error) {
         console.warn(`Error reading API key from settings for '${settingKey}':`, error);
@@ -409,7 +422,7 @@ export class LLMProvider {
 
     // Log API key source for debugging (without exposing the key)
     if (apiKey) {
-      console.log(`LLMProvider: Using ${providerName} API key from ${source} (length: ${apiKey.length})`);
+      logger.info(`LLMProvider: Using ${providerName} API key from ${source} (length: ${apiKey.length})`);
       
       // Basic validation - ensure it's not a placeholder
       if (apiKey.includes("YOUR_") || apiKey.includes("PLACEHOLDER")) {

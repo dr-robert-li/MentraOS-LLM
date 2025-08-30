@@ -917,17 +917,53 @@ class MiraServer extends AppServer {
           session.logger.info('Settings changed, reinitializing transcription subscription');
         }
         
+        // Debug logging for settings changes
+        if (settings) {
+          logger.info(`[Session ${sessionId}] Settings change received:`, JSON.stringify(settings));
+          
+          // Log current actual settings state after change
+          const currentProvider = session.settings.get<string>('llm_provider');
+          const currentModel = session.settings.get<string>('llm_model');
+          const currentApiKey = session.settings.get<string>('llm_api_key');
+          
+          logger.info(`[Session ${sessionId}] Actual settings state - Provider: ${currentProvider}, Model: ${currentModel}, API Key: ${currentApiKey ? 'present' : 'missing'}`);
+        }
+        
         // Invalidate LLM cache when LLM-related settings change
         const changedKeys = Object.keys(settings || {});
         const llmSettingsKeys = ['llm_provider', 'llm_model', 'llm_api_key'];
         
         if (changedKeys.some(key => llmSettingsKeys.includes(key))) {
-          session.logger.info('LLM settings changed, invalidating provider cache');
-          LLMProvider.invalidateCache(sessionId);
+          logger.info(`[Session ${sessionId}] LLM settings changed, invalidating provider cache`);
+          
+          // Add extra validation for API key changes
+          if (changedKeys.includes('llm_api_key')) {
+            const apiKey = session.settings.get<string>('llm_api_key', '');
+            logger.info(`[Session ${sessionId}] API key validation - Value: "${apiKey}", Length: ${apiKey.length} characters`);
+            if (apiKey && apiKey.length > 0 && apiKey.length < 10) {
+              logger.warn(`[Session ${sessionId}] API key appears too short: ${apiKey.length} characters - Value: "${apiKey}"`);
+            }
+          }
+          
+          // Add 2-second delay to handle race conditions from Android app
+          setTimeout(() => {
+            LLMProvider.invalidateCache(sessionId);
+            
+            // Log final settings state after cache invalidation
+            const finalProvider = session.settings.get<string>('llm_provider');
+            const finalModel = session.settings.get<string>('llm_model');
+            logger.info(`[Session ${sessionId}] Final LLM settings after cache invalidation (2s delay) - Provider: ${finalProvider}, Model: ${finalModel}`);
+          }, 2000);
         }
         
       } catch (error) {
         session.logger.error(error, 'Error handling settings change');
+        // Show error message to user if possible
+        try {
+          session.layouts.showTextWall('Settings update failed. Please try again.', { durationMs: 5000 });
+        } catch (displayError) {
+          session.logger.error(displayError, 'Failed to display settings error message');
+        }
         // Don't crash - just log the error and continue
       }
     });
