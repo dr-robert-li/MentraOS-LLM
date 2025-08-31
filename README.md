@@ -71,7 +71,8 @@ npm run deploy:gcloud:build
 
 After deployment, submit your app to the Mentra Glass Developer Console. Visit: https://console.mentra.glass/apps
 Once created, you'll see it in your MentraOS Android app - activate it there and prompt it using "Hey Mentra..."
-*Note: This differs from the different "Hey Mira..." in order to not conflict with the default app if using side by side.
+
+*Note: This differs from the different "Hey Mira..." in order to not conflict with the default app if using side by side.*
 
 ### Other Platforms
 
